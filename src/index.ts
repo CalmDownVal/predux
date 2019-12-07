@@ -1,5 +1,5 @@
 import { bindActionCreators } from './bindActionCreators';
-import { connect } from './connect';
+import { connect, ConnectProps } from './connect';
 import { context } from './context';
 import { createStore } from './createStore';
 import { deepEqual } from './deepEqual';
@@ -21,6 +21,7 @@ export {
 	Arguments,
 	bindActionCreators,
 	connect,
+	ConnectProps,
 	createStore,
 	deepEqual,
 	Dispatch,
