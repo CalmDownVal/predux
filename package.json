@@ -9,7 +9,7 @@
 		"preact": "^10.0.5"
 	},
 	"devDependencies": {
-		"typescript": "^3.7.4"
+		"typescript": "^3.7.3"
 	},
 	"scripts": {
 		"build": "tsc && node script/esnext.cjs"

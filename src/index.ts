@@ -16,11 +16,11 @@ import {
 	WithReturnType
 } from './types';
 
+export const StoreProvider = context.Provider;
 export {
 	Arguments,
 	bindActionCreators,
 	connect,
-	context,
 	createStore,
 	deepEqual,
 	Dispatch,
