@@ -1,0 +1,17 @@
+{
+	"name": "@calmdownval/preact-store",
+	"version": "0.0.1",
+	"license": "MIT",
+	"main": "dist/index.mjs",
+	"types": "dist/index.d.ts",
+	"type": "module",
+	"peerDependencies": {
+		"preact": "^10.0.5"
+	},
+	"devDependencies": {
+		"typescript": "^3.7.4"
+	},
+	"scripts": {
+		"build": "tsc && node script/esnext.cjs"
+	}
+}
