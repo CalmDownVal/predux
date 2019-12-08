@@ -1,35 +1,39 @@
-import { ISignal } from './signal';
+import { Signal } from './signal';
 
-export interface IAction<T = any>
+export type Action<T extends any[] = any> =
+	((type: string, ...args: T) => unknown) extends (...args: infer U) => unknown ? Readonly<U> : never;
+
+export type Arguments<TFunc> =
+	TFunc extends (...args: infer TArgs) => unknown ? TArgs : never;
+
+export interface ActionCreator<TState = {}, TAction extends Action = Action>
 {
-	type: T;
+	(...args: unknown[]): TAction | Thunk<TState, TAction>;
 }
 
-export interface IAnyAction extends IAction
+export interface ActionCreators<TState = {}, TAction extends Action = Action>
 {
-	[key: string]: any;
+	[key: string]: ActionCreator<TState, TAction> | undefined;
 }
 
-export interface IActionCreators<TState = {}, TAction extends IAction = IAnyAction>
+export type Dispatch<TState = {}, TAction extends Action = Action> =
+	(action: TAction | Thunk<TState, TAction>) => void;
+
+export interface Reducer<TState = {}, TArgs extends any[] = any>
 {
-	[key: string]: ((...args: any) => TAction | ThunkType<TState, TAction>) | undefined;
+	(state: TState, ...args: TArgs): TState;
+	type: string;
 }
 
-export interface IStore<TState = {}, TAction extends IAction = IAnyAction>
+export interface Store<TState = {}, TAction extends Action = Action>
 {
 	dispatch: Dispatch<TState, TAction>;
 	getState: () => TState;
-	subscription: ISignal;
+	subscription: Signal;
 }
 
-export type Arguments<TFunc> =
-	TFunc extends (...args: infer TArgs) => any ? TArgs : never;
+export type Thunk<TState = {}, TAction extends Action = Action> =
+	(dispatch: (action: TAction) => void, getState: () => TState) => void;
 
 export type WithReturnType<TFunc, TReturn> =
 	(...args: Arguments<TFunc>) => TReturn;
-
-export type ThunkType<TState = {}, TAction extends IAction = IAnyAction> =
-	(dispatch: (action: TAction) => void, getState: () => TState) => void;
-
-export type Dispatch<TState = {}, TAction extends IAction = IAnyAction> =
-	(action: TAction | ThunkType<TState, TAction>) => void;

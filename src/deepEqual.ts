@@ -8,7 +8,6 @@ export function deepEqual(a: any, b: any)
 	if (a && b && typeof a === 'object' && typeof b === 'object')
 	{
 		let i;
-		let keys;
 		let length;
 
 		if (Array.isArray(a))
@@ -30,7 +29,7 @@ export function deepEqual(a: any, b: any)
 			return true;
 		}
 
-		keys = Object.keys(a);
+		const keys = Object.keys(a);
 		length = keys.length;
 		if (length !== Object.keys(b).length)
 		{

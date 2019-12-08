@@ -1,19 +1,19 @@
-import { Dispatch, IAction, IActionCreators, IAnyAction, WithReturnType } from './types';
+import { Action, ActionCreators, Dispatch, WithReturnType } from './types';
 
 export type BoundActionCreators<T> =
 	{ [K in keyof T]: WithReturnType<T[K], void> };
 
-export function bindActionCreators<T extends IActionCreators<TState, TAction>, TState = {}, TAction extends IAction = IAnyAction>(
+export function bindActionCreators<T extends ActionCreators<TState, TAction>, TState = {}, TAction extends Action = Action>(
 	actionCreators: T,
 	dispatch: Dispatch<TState, TAction>)
 {
-	const bound: { [key: string]: any } = {};
+	const bound: { [key: string]: unknown } = {};
 	for (const actionName in actionCreators)
 	{
 		const actionCreator = actionCreators[actionName];
 		if (actionCreator && Object.prototype.hasOwnProperty.call(actionCreators, actionName))
 		{
-			bound[actionName] = (...args: any) => dispatch(actionCreator(...args));
+			bound[actionName] = (...args: unknown[]) => dispatch(actionCreator(...args));
 		}
 	}
 	return bound as BoundActionCreators<T>;

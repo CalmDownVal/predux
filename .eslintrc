@@ -1,0 +1,134 @@
+{
+	"extends": [
+		"plugin:@typescript-eslint/recommended",
+		"plugin:react/recommended"
+	],
+	"parser": "@typescript-eslint/parser",
+	"parserOptions": {
+		"ecmaFeatures": {
+			"jsx": true
+		},
+		"ecmaVersion": 2018,
+		"sourceType": "module"
+	},
+	"root": true,
+	"rules": {
+		"no-trailing-spaces": "warn",
+		"no-console": "warn",
+		"no-alert": "warn",
+		"no-shadow": "error",
+		"eqeqeq": "error",
+		"curly": "warn",
+		"eol-last": "warn",
+		"camelcase": "warn",
+		"no-empty": "warn",
+		"no-bitwise": "off",
+		"no-param-reassign": "error",
+		"arrow-spacing": "warn",
+		"arrow-body-style": [
+			"warn",
+			"as-needed"
+		],
+		"one-var": [
+			"warn",
+			"never"
+		],
+		"linebreak-style": [
+			"warn",
+			"unix"
+		],
+		"semi": [
+			"error",
+			"always"
+		],
+		"quotes": [
+			"warn",
+			"single",
+			{
+				"avoidEscape": true,
+				"allowTemplateLiterals": false
+			}
+		],
+		"quote-props": [
+			"warn",
+			"as-needed"
+		],
+		"arrow-parens": [
+			"warn",
+			"as-needed"
+		],
+		"sort-imports": [
+			"warn",
+			{
+				"ignoreCase": true,
+				"memberSyntaxSortOrder": [
+					"single",
+					"multiple",
+					"all",
+					"none"
+				]
+			}
+		],
+		"sort-keys": [
+			"warn",
+			"asc",
+			{
+				"natural": true
+			}
+		],
+
+		// typescript
+		"@typescript-eslint/explicit-function-return-type": "off",
+		"@typescript-eslint/no-untyped-public-signature": "off",
+		"@typescript-eslint/explicit-member-accessibility": "warn",
+		"@typescript-eslint/no-non-null-assertion": "off",
+		"@typescript-eslint/no-explicit-any": "off",
+		"@typescript-eslint/interface-name-prefix": [
+			"warn",
+			{
+				"prefixWithI": "never"
+			}
+		],
+		"indent": "off",
+		"@typescript-eslint/indent": [
+			"warn",
+			"tab",
+			{
+				"SwitchCase": 1
+			}
+		],
+		"brace-style": "off",
+		"@typescript-eslint/brace-style": [
+			"warn",
+			"allman"
+		],
+
+		// preact
+		"react/no-did-update-set-state": "error",
+		"react/react-in-jsx-scope": "error",
+		"react/self-closing-comp": "warn",
+		"react/prop-types": "off",
+		"react/no-unknown-property": [
+			"error",
+			{
+				"ignore": [
+					"class"
+				]
+			}
+		],
+		"react/jsx-no-bind": [
+			"error",
+			{
+				"allowArrowFunctions": true,
+				"allowBind": false,
+				"ignoreRefs": true
+			}
+		]
+	},
+	"settings": {
+		"react": {
+			"pragma": "h",
+			"version": "16.12"
+		}
+	}
+}

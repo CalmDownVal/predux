@@ -1,4 +1,4 @@
-export function shallowEqual(a: { [k: string]: any }, b: { [k: string]: any })
+export function shallowEqual(a: { [k: string]: unknown }, b: { [k: string]: unknown })
 {
 	const keys = Object.keys(a);
 	const length = keys.length;

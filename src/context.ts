@@ -1,4 +1,4 @@
 import { createContext } from 'preact';
-import { IStore } from './types';
+import { Store } from './types';
 
-export const context = createContext<IStore<any, any>>(null!);
+export const context = createContext<Store<any>>(null!);

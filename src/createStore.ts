@@ -1,26 +1,35 @@
-import { deepEqual } from './deepEqual';
 import { create } from './signal';
-import { Dispatch, IAction, IAnyAction } from './types';
+import { deepEqual } from './deepEqual';
+import { Action, Dispatch, Reducer } from './types';
 
-export function createStore<TState = {}, TAction extends IAction = IAnyAction>(
-	reducer: (state: TState, action: TAction) => TState)
+export function createStore<TState = {}, TAction extends Action = Action>(initialState: TState, reducers: Reducer<TState>[])
 {
-	let frameHandle: number = 0;
+	let frameHandle = 0;
 	let isDispatching = false;
-	let lastState: TState = null!;
-	let state = reducer(undefined!, { type: 'INIT' } as TAction);
+	let lastState: TState | null = null;
+	let state = initialState;
+
+	const reducerMap: { [key: string]: Reducer<TState> | undefined } = {};
+	for (const reducer of reducers)
+	{
+		reducerMap[reducer.type] = reducer;
+	}
 
 	const subscription = create();
 	const notifyListeners = () =>
 	{
-		frameHandle = 0;
-		if (deepEqual(lastState, state))
+		try
 		{
-			return;
+			if (!deepEqual(lastState, state))
+			{
+				subscription();
+			}
 		}
-
-		subscription();
-		lastState = state;
+		finally
+		{
+			frameHandle = 0;
+			lastState = null;
+		}
 	};
 
 	const getState = () => state;
@@ -39,17 +48,26 @@ export function createStore<TState = {}, TAction extends IAction = IAnyAction>(
 
 		try
 		{
-			isDispatching = true;
-			state = reducer(state, action);
+			const [ type, ...args ] = action;
+			const reducer = reducerMap[type];
+			if (reducer)
+			{
+				isDispatching = true;
+				if (lastState === null)
+				{
+					lastState = state;
+				}
+
+				state = reducer(state, ...args);
+				if (frameHandle === 0)
+				{
+					frameHandle = requestAnimationFrame(notifyListeners);
+				}
+			}
 		}
 		finally
 		{
 			isDispatching = false;
-		}
-
-		if (frameHandle === 0)
-		{
-			frameHandle = requestAnimationFrame(notifyListeners);
 		}
 	};
 

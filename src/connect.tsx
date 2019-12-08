@@ -1,10 +1,10 @@
-import { ComponentType, FunctionalComponent, h } from 'preact';
-import { useContext, useLayoutEffect, useMemo, useReducer, useRef } from 'preact/hooks';
-import { bindActionCreators, BoundActionCreators } from './bindActionCreators';
 import { context } from './context';
 import { shallowEqual } from './shallowEqual';
+import { ActionCreators, Dispatch, Store, WithReturnType } from './types';
+import { bindActionCreators, BoundActionCreators } from './bindActionCreators';
+import { ComponentType, FunctionalComponent, h } from 'preact';
 import { create, off, on } from './signal';
-import { Dispatch, IActionCreators, WithReturnType } from './types';
+import { useContext, useLayoutEffect, useMemo, useReducer, useRef } from 'preact/hooks';
 
 type Factory<K = never> =
 	<T>(Component: ComponentType<T>) => FunctionalComponent<Omit<T, keyof K>>;
@@ -19,7 +19,7 @@ type MapDispatchParam<TDispatchProps, TOwnProps, TState> =
 type MergePropsParam<TStateProps, TDispatchProps, TOwnProps> =
 	(stateProps: TStateProps, dispatchProps: BoundActionCreators<TDispatchProps>, ownProps: TOwnProps) => {};
 
-interface IConnect
+interface Connect
 {
 	<TStateProps = {}, TDispatchProps = {}, TOwnProps = {}, TState = {}>(
 		mapStateToProps: MapStateParam<TStateProps, TOwnProps, TState>
@@ -51,20 +51,19 @@ function defaultMergeProps(stateProps: {}, dispatchProps: {}, ownProps: {})
 	};
 }
 
-function dryConnect<TStateProps = {}, TDispatchProps extends IActionCreators = {}, TOwnProps = {}, TState = {}>(
-	mapStateToProps: MapStateParam<TStateProps, TOwnProps, TState>,
+function dryConnect<TStateProps = {}, TDispatchProps extends ActionCreators = {}, TOwnProps = {}, TState = {}>(
+	mapStateToProps?: MapStateParam<TStateProps, TOwnProps, TState>,
 	mapDispatchToProps?: MapDispatchParam<TDispatchProps, TOwnProps, TState>,
 	mergeProps: MergePropsParam<TStateProps, TDispatchProps, TOwnProps> = defaultMergeProps): Factory
 {
-	const mapStateUsesOwn = mapStateToProps.length > 1;
+	const mapStateUsesOwn = mapStateToProps && mapStateToProps.length > 1;
 	const mapDispatchUsesOwn = typeof mapDispatchToProps === 'function' && mapDispatchToProps.length > 1;
-	return Component =>
+	return function <T>(Component: ComponentType<T>)
 	{
 		// TODO: memo Component
-
 		const Connected: FunctionalComponent<TOwnProps> = ownProps =>
 		{
-			const store = useContext(context);
+			const store = useContext(context) as Store<TState>;
 			const lastProps = useRef({});
 
 			// forces an update when needed
@@ -89,9 +88,11 @@ function dryConnect<TStateProps = {}, TDispatchProps extends IActionCreators = {
 
 			// state props change whenever store data changes and optionally
 			// whenever ownProps change, if used by the mapping func
-			const stateProps = useMemo(
-				() => mapStateToProps(store.getState(), ownProps),
-				mapStateUsesOwn ? [ ownProps, x ] : [ x ]);
+			const stateProps = mapStateToProps
+				? useMemo(
+					() => mapStateToProps(store.getState(), ownProps),
+					mapStateUsesOwn ? [ ownProps, x ] : [ x ])
+				: {} as TStateProps;
 
 			// dispatch props change with context changes and optionally
 			// whenever ownProps change, if used by the mapping func
@@ -99,7 +100,7 @@ function dryConnect<TStateProps = {}, TDispatchProps extends IActionCreators = {
 				? useMemo(() => typeof mapDispatchToProps === 'function'
 					? mapDispatchToProps(store.dispatch, ownProps)
 					: bindActionCreators(mapDispatchToProps, store.dispatch),
-					mapDispatchUsesOwn ? [ ownProps, store ] : [ store ])
+				mapDispatchUsesOwn ? [ ownProps, store ] : [ store ])
 				: {}) as BoundActionCreators<TDispatchProps>;
 
 			// merge props will always update
@@ -116,11 +117,11 @@ function dryConnect<TStateProps = {}, TDispatchProps extends IActionCreators = {
 			}
 
 			return useMemo(() =>
-			(
-				<context.Provider value={storeOverride}>
-					<Component {...props as any} />
-				</context.Provider>
-			), [ props, storeOverride ]);
+				(
+					<context.Provider value={storeOverride}>
+						<Component {...props as Readonly<T>} />
+					</context.Provider>
+				), [ props, storeOverride ]);
 		};
 
 		Connected.displayName = `Connect(${Component.displayName || ''})`;
@@ -131,14 +132,17 @@ function dryConnect<TStateProps = {}, TDispatchProps extends IActionCreators = {
 export type ConnectProps<
 	TOwnProps extends {},
 	TMapState extends MapStateParam<any, any, any> | undefined,
-	TMapDispatch extends MapDispatchParam<any, any, any> | undefined = undefined> =
-	& TOwnProps
-	& ReturnType<NonNullable<TMapState>>
-	& (undefined extends TMapDispatch ? {} : (
-			TMapDispatch extends (...args: any) => any
+	TMapDispatch extends MapDispatchParam<any, any, any> | undefined = undefined,
+	TMergeProps extends MergePropsParam<any, any, any> | undefined = undefined> =
+	TMergeProps extends undefined ? (
+		& TOwnProps
+		& ReturnType<NonNullable<TMapState>>
+		& (undefined extends TMapDispatch ? {} : (
+			TMapDispatch extends (...args: any[]) => any
 				? ReturnType<TMapDispatch>
 				: { [T in keyof TMapDispatch]: WithReturnType<TMapDispatch[T], void> }
+		 )
 		)
-	);
+	) : ReturnType<NonNullable<TMergeProps>>;
 
-export const connect: IConnect = dryConnect;
+export const connect: Connect = dryConnect;
