@@ -11,14 +11,12 @@
 			"dom.iterable",
 			"esnext"
 		],
-		"module": "esnext",
+		"module": "commonjs",
 		"moduleResolution": "node",
 		"newLine": "lf",
 		"outDir": "dist/",
 		"strict": true,
-		"target": "esnext",
-		"types": [
-		]
+		"target": "esnext"
 	},
 	"include": [
 		"src/**/*"
