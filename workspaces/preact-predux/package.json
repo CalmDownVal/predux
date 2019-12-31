@@ -1,0 +1,21 @@
+{
+	"name": "@calmdownval/preact-predux",
+	"version": "0.0.1",
+	"license": "MIT",
+	"main": "dist/index.js",
+	"types": "dist/index.d.ts",
+	"type": "module",
+	"peerDependencies": {
+		"preact": "10.x.x"
+	},
+	"dependencies": {
+		"@calmdownval/predux": "0.x.x"
+	},
+	"devDependencies": {
+		"preact": "10.x.x",
+		"typescript": "3.7.x"
+	},
+	"scripts": {
+		"build": "tsc"
+	}
+}

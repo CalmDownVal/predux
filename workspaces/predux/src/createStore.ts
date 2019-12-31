@@ -1,39 +1,48 @@
-import { create } from './signal';
-import { deepEqual } from './deepEqual';
+import { equal } from '@calmdownval/slow-deep-equal';
 import { Action, Dispatch, Reducer } from './types';
+import * as Signal from './signal';
+
+const [ scheduleFrame, cancelFrame ] =
+	typeof requestAnimationFrame === 'function' && typeof cancelAnimationFrame === 'function'
+		? [ requestAnimationFrame, cancelAnimationFrame ] as const
+		: [ setTimeout, clearTimeout ] as const;
 
 export function createStore<TState = {}, TAction extends Action = Action>(initialState: TState, reducers: Reducer<TState>[])
 {
-	let frameHandle = 0;
 	let isDispatching = false;
+	let frameId = 0;
 	let lastState: TState | null = null;
 	let state = initialState;
 
 	const reducerMap: { [key: string]: Reducer<TState> | undefined } = {};
 	for (const reducer of reducers)
 	{
+		if (reducerMap[reducer.type] !== undefined)
+		{
+			throw new Error('cannot register multiple reducers for the same action');
+		}
 		reducerMap[reducer.type] = reducer;
 	}
 
-	const subscription = create();
+	const stateChanged = Signal.create();
 	const notifyListeners = () =>
 	{
 		try
 		{
-			if (!deepEqual(lastState, state))
+			if (!equal(lastState, state))
 			{
-				subscription();
+				stateChanged();
 			}
 		}
 		finally
 		{
-			frameHandle = 0;
 			lastState = null;
+			frameId = 0;
 		}
 	};
 
 	const getState = () => state;
-	const dispatch: Dispatch<TState, TAction> = action =>
+	const dispatch: Dispatch<TState, TAction> = (action, forceImmediate = false) =>
 	{
 		if (isDispatching)
 		{
@@ -59,9 +68,19 @@ export function createStore<TState = {}, TAction extends Action = Action>(initia
 				}
 
 				state = reducer(state, ...args);
-				if (frameHandle === 0)
+				if (forceImmediate)
 				{
-					frameHandle = requestAnimationFrame(notifyListeners);
+					if (frameId !== 0)
+					{
+						cancelFrame(frameId);
+					}
+
+					isDispatching = false;
+					notifyListeners();
+				}
+				else if (frameId === 0)
+				{
+					frameId = scheduleFrame(notifyListeners);
 				}
 			}
 		}
@@ -71,5 +90,5 @@ export function createStore<TState = {}, TAction extends Action = Action>(initia
 		}
 	};
 
-	return { dispatch, getState, subscription };
+	return { dispatch, getState, stateChanged };
 }

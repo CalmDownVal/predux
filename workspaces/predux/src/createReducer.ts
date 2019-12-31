@@ -17,7 +17,7 @@ function dryCreateReducer()
 	/* eslint-disable prefer-rest-params */
 	const reducer = arguments[arguments.length - 1].bind(null) as Reducer;
 	const type: string = arguments.length === 1
-		? `a${++indexer}`
+		? `A${++indexer}`
 		: arguments[0];
 	/* eslint-enable prefer-rest-params */
 

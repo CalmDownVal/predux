@@ -1,4 +1,4 @@
-export function shallowEqual(a: { [k: string]: unknown }, b: { [k: string]: unknown })
+export function propRefsEqual(a: { [k: string]: unknown }, b: { [k: string]: unknown })
 {
 	const keys = Object.keys(a);
 	const length = keys.length;

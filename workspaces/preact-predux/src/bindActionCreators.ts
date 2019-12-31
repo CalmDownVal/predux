@@ -1,9 +1,10 @@
-import { Action, ActionCreators, Dispatch, WithReturnType } from './types';
+import { MapDispatch } from './connect';
+import { Action, Dispatch, WithReturnType } from '@calmdownval/predux';
 
 export type BoundActionCreators<T> =
 	{ [K in keyof T]: WithReturnType<T[K], void> };
 
-export function bindActionCreators<T extends ActionCreators<TState, TAction>, TState = {}, TAction extends Action = Action>(
+export function bindActionCreators<T extends MapDispatch<TState, TAction>, TState = {}, TAction extends Action = Action>(
 	actionCreators: T,
 	dispatch: Dispatch<TState, TAction>)
 {
