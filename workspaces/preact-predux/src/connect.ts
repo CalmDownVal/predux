@@ -2,7 +2,7 @@ import { context } from './context';
 import { propRefsEqual } from './propRefsEqual';
 import { Action, ActionCreator, Signal, WithReturnType } from '@calmdownval/predux';
 import { bindActionCreators, BoundActionCreators } from './bindActionCreators';
-import { Component as ClassComponent, ComponentType, FunctionalComponent, h, RenderableProps } from 'preact';
+import { Component as ClassComponent, ComponentType, FunctionalComponent, h } from 'preact';
 import { useContext, useLayoutEffect, useMemo, useReducer } from 'preact/hooks';
 
 interface MapState<TState, TOwnProps>
@@ -44,12 +44,6 @@ interface Connect
 	): <T>(Component: ComponentType<T>) => FunctionalComponent<TOwnProps>;
 }
 
-interface ProtoComponent<P = {}>
-{
-	props: RenderableProps<P>;
-	shouldComponentUpdate: (nextProps: RenderableProps<P>) => boolean;
-}
-
 function incrementReducer(updateCount: number): number
 {
 	return updateCount + 1;
@@ -74,18 +68,7 @@ function dryConnect<TState = {}, TOwnProps = {}, TStateProps extends MapState<TS
 
 	return function <T>(Component: ComponentType<T>)
 	{
-		function shouldUpdate(this: ProtoComponent, nextProps: RenderableProps<any>)
-		{
-			const ref = this.props.ref;
-			if (ref !== nextProps.ref && ref)
-			{
-				typeof ref === 'function' ? ref(null) : (ref.current = null);
-			}
-
-			return !propRefsEqual(this.props, nextProps);
-		}
-
-		function Connected(this: ProtoComponent, ownProps: TOwnProps)
+		const Connected = (ownProps: TOwnProps) =>
 		{
 			const store = useContext(context);
 
@@ -165,20 +148,13 @@ function dryConnect<TState = {}, TOwnProps = {}, TStateProps extends MapState<TS
 			// whenever this component updates
 			const storeOverride = useMemo(() => ({ ...store, stateChanged: instance.stateChanged }), [ store ]);
 
-			// this is equivalent to wrapping our Connected in memo()
-			this.shouldComponentUpdate = shouldUpdate;
-			return useMemo(() =>
-				(
-					<context.Provider value={storeOverride}>
-						<Component {...props as Readonly<T>} />
-					</context.Provider>
-				), [ props, storeOverride ]);
-		}
+			// memoize the output
+			return useMemo(
+				() => h(context.Provider, { value: storeOverride } as any, h(Component, props as any)),
+				[ props, storeOverride ]);
+		};
 
-		Connected.prototype.isReactComponent = true;
 		Connected.displayName = `Connect(${Component.displayName || Component.name || ''})`;
-		Connected._forwarded = true;
-
 		return Connected as FunctionalComponent<any>;
 	};
 }
