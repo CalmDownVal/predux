@@ -8,7 +8,7 @@ interface CreateReducer
 
 	<TState extends object, TArgs extends any[], TKey extends string>(
 		type: TKey, fn: (state: TState, ...args: TArgs) => TState
-	): Readonly<[ Reducer<TState, TArgs>, (...args: TArgs) => Action<TArgs> ]>;
+	): Readonly<[ Reducer<TState, TArgs, TKey>, (...args: TArgs) => Action<TArgs, TKey> ]>;
 }
 
 let indexer = 0;

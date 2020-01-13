@@ -7,7 +7,7 @@ import { useContext, useLayoutEffect, useMemo, useReducer } from 'preact/hooks';
 
 interface MapState<TState, TOwnProps>
 {
-	[key: string]: undefined | ((state: TState, ownProps: TOwnProps) => any);
+	[key: string]: undefined | ((state: TState, ownProps?: TOwnProps) => any);
 }
 
 export interface MapDispatch<TState, TAction extends Action = Action>

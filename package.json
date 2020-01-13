@@ -1,8 +1,8 @@
 {
 	"private": true,
 	"workspaces": [
-		"workspaces/predux",
-		"workspaces/preact-predux"
+		"packages/predux",
+		"packages/preact-predux"
 	],
 	"devDependencies": {
 		"@typescript-eslint/eslint-plugin": "2.x.x",
