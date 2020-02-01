@@ -1,17 +1,16 @@
 {
 	"name": "@calmdownval/preact-predux",
-	"version": "0.0.4",
+	"version": "0.0.5",
 	"license": "MIT",
 	"main": "dist/index.js",
 	"types": "dist/index.d.ts",
 	"type": "module",
 	"peerDependencies": {
+		"@calmdownval/predux": "0.x.x",
 		"preact": "10.x.x"
 	},
-	"dependencies": {
-		"@calmdownval/predux": "0.x.x"
-	},
 	"devDependencies": {
+		"@calmdownval/predux": "0.x.x",
 		"preact": "10.x.x",
 		"typescript": "3.7.x"
 	},
