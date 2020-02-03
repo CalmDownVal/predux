@@ -1,6 +1,6 @@
 {
 	"name": "@calmdownval/predux",
-	"version": "0.0.5",
+	"version": "0.0.6",
 	"license": "MIT",
 	"main": "dist/index.js",
 	"types": "dist/index.d.ts",
@@ -12,6 +12,7 @@
 		"typescript": "3.7.x"
 	},
 	"scripts": {
-		"build": "tsc"
+		"build": "tsc",
+		"prepublishOnly": "npm run build"
 	}
 }
