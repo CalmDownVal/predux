@@ -1,4 +1,4 @@
-import { equal } from '@calmdownval/slow-deep-equal';
+import equal from '@calmdownval/slow-deep-equal';
 import { Action, Dispatch, Reducer } from './types';
 import * as Signal from './signal';
 

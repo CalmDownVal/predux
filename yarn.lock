@@ -18,10 +18,10 @@
     esutils "^2.0.2"
     js-tokens "^4.0.0"
 
-"@calmdownval/slow-deep-equal@^1.0.1":
-  version "1.0.1"
-  resolved "https://registry.yarnpkg.com/@calmdownval/slow-deep-equal/-/slow-deep-equal-1.0.1.tgz#91b54c403375b0db6381e76b3d6c31b9330dcf4c"
-  integrity sha512-0w6IqgSQW63XibtOPObHf8cMcTS81hbqEs5EhZciqqoKhXB8ckcvja65bsvHwhxco8rTCzb9lEQyH/or0Cisvg==
+"@calmdownval/slow-deep-equal@1.0.2":
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/@calmdownval/slow-deep-equal/-/slow-deep-equal-1.0.2.tgz#427275c80680f1d5a5599143157c2a189947ae41"
+  integrity sha512-CscUWWW6q9dvJ1Q76PeMo/Jmm6S3LhfcfABq9SFDMgSMBlZzsKjJVvTrt+Q1d7+599t7n3g9aiCFK4DTa2f5vg==
 
 "@types/eslint-visitor-keys@^1.0.0":
   version "1.0.0"
