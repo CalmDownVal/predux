@@ -1,6 +1,6 @@
 import { context } from './context';
 import { propRefsEqual } from './propRefsEqual';
-import { Action, ActionCreator, Signal, WithReturnType } from '@calmdownval/predux';
+import { Action, ActionCreator, Signal, Store, WithReturnType } from '@calmdownval/predux';
 import { bindActionCreators, BoundActionCreators } from './bindActionCreators';
 import { Component as ClassComponent, ComponentType, FunctionalComponent, h } from 'preact';
 import { useContext, useLayoutEffect, useMemo, useReducer } from 'preact/hooks';
@@ -44,6 +44,14 @@ interface Connect
 	): <T>(Component: ComponentType<T>) => FunctionalComponent<TOwnProps>;
 }
 
+function assertStore(store: Store<any> | null): asserts store is Store<any>
+{
+	if (!store)
+	{
+		throw new Error('Store was not provided. Wrap your component tree in a store <Provider> and provide a valid store.');
+	}
+}
+
 function incrementReducer(updateCount: number): number
 {
 	return updateCount + 1;
@@ -71,6 +79,7 @@ function dryConnect<TState = {}, TOwnProps = {}, TStateProps extends MapState<TS
 		const Connected = (ownProps: TOwnProps) =>
 		{
 			const store = useContext(context);
+			assertStore(store);
 
 			// memoize all the things we need for an instance at once
 			const instance = useMemo(initComponent, []);
