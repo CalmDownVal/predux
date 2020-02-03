@@ -1,12 +1,12 @@
 {
 	"name": "@calmdownval/predux",
-	"version": "0.0.6",
+	"version": "0.0.7",
 	"license": "MIT",
 	"main": "dist/index.js",
 	"types": "dist/index.d.ts",
 	"type": "module",
 	"dependencies": {
-		"@calmdownval/slow-deep-equal": "1.0.2"
+		"@calmdownval/slow-deep-equal": "1.0.3"
 	},
 	"devDependencies": {
 		"typescript": "3.7.x"
