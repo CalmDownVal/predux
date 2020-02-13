@@ -5,12 +5,12 @@ import { bindActionCreators, BoundActionCreators } from './bindActionCreators';
 import { Component as ClassComponent, ComponentType, FunctionalComponent, h } from 'preact';
 import { useContext, useLayoutEffect, useMemo, useReducer } from 'preact/hooks';
 
-interface MapState<TState, TOwnProps>
+interface StateMap<TState, TOwnProps>
 {
 	[key: string]: undefined | ((state: TState, ownProps?: TOwnProps) => any);
 }
 
-export interface MapDispatch<TState, TAction extends Action = Action>
+export interface DispatchMap<TState, TAction extends Action = Action>
 {
 	[key: string]: undefined | ActionCreator<TState, TAction>;
 }
@@ -62,7 +62,7 @@ function defaultMergeProps(stateProps: {}, dispatchProps: {}, ownProps: {})
 	return Object.assign({}, ownProps, stateProps, dispatchProps);
 }
 
-function dryConnect<TState = {}, TOwnProps = {}, TStateProps extends MapState<TState, TOwnProps> = {}, TDispatchProps extends MapDispatch<TState> = {}>(
+function dryConnect<TState = {}, TOwnProps = {}, TStateProps extends StateMap<TState, TOwnProps> = {}, TDispatchProps extends DispatchMap<TState> = {}>(
 	mapStateToProps?: MapStateParam<TStateProps>,
 	mapDispatchToProps?: MapDispatchParam<TDispatchProps, TOwnProps>,
 	mergeProps: MergePropsParam<TStateProps, TDispatchProps, TOwnProps> = defaultMergeProps): Factory
@@ -74,7 +74,7 @@ function dryConnect<TState = {}, TOwnProps = {}, TStateProps extends MapState<TS
 		stateSelectors: typeof mapStateToProps === 'function' ? mapStateToProps() : mapStateToProps
 	});
 
-	return function <T>(Component: ComponentType<T>)
+	return <T>(Component: ComponentType<T>) =>
 	{
 		const Connected = (ownProps: TOwnProps) =>
 		{
