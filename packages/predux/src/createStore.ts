@@ -1,4 +1,3 @@
-import equal from '@calmdownval/slow-deep-equal';
 import { Action, Dispatch, Reducer } from './types';
 import * as Signal from './signal';
 
@@ -29,7 +28,7 @@ export function createStore<TState = {}, TAction extends Action = Action>(initia
 	{
 		try
 		{
-			if (!equal(lastState, state))
+			if (lastState !== state)
 			{
 				stateChanged();
 			}
