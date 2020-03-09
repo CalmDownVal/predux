@@ -1,12 +1,12 @@
-import { Action, Dispatch, Reducer } from './types';
 import * as Signal from './signal';
+import { Action, Reducer, Store, Thunk } from './types';
 
 const [ scheduleFrame, cancelFrame ] =
 	typeof requestAnimationFrame === 'function' && typeof cancelAnimationFrame === 'function'
 		? [ requestAnimationFrame, cancelAnimationFrame ] as const
 		: [ setTimeout, clearTimeout ] as const;
 
-export function createStore<TState = {}, TAction extends Action = Action>(initialState: TState, reducers: Reducer<TState>[])
+export function createStore<TState = {}, TAction extends Action = Action>(initialState: TState, reducers: Reducer<TState>[]): Store<TState, TAction>
 {
 	let isDispatching = false;
 	let frameId = 0;
@@ -41,7 +41,7 @@ export function createStore<TState = {}, TAction extends Action = Action>(initia
 	};
 
 	const getState = () => state;
-	const dispatch: Dispatch<TState, TAction> = (action, forceImmediate = false) =>
+	const dispatch = (action: TAction | Thunk<TState, TAction>, forceImmediate?: boolean) =>
 	{
 		if (isDispatching)
 		{
@@ -50,8 +50,7 @@ export function createStore<TState = {}, TAction extends Action = Action>(initia
 
 		if (typeof action === 'function')
 		{
-			action(dispatch, getState);
-			return;
+			return action(dispatch, getState);
 		}
 
 		try
@@ -67,7 +66,7 @@ export function createStore<TState = {}, TAction extends Action = Action>(initia
 				}
 
 				state = reducer(state, ...args);
-				if (forceImmediate)
+				if (forceImmediate === true)
 				{
 					if (frameId !== 0)
 					{

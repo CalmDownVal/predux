@@ -11,12 +11,13 @@ enforce a consistent way of doing things.
 | action identifier can be any type | action identifier is always a string |
 | an action can be handled by multiple reducers | an action has always exactly one reducer |
 | reducers recognize the action (typically a switch block) | reducer implicitly receives a specific action |
-| listeners are notified after each dispatch | tests state equality and batches updates |
+| listeners are notified after each dispatch | state tested for changes, updates are batched |
+| thunk actions are an optional middleware | thunk actions are supported out of the box |
 
 ## Actions & Action Creators
 
 You've written your last one! With Predux you only write the reducer of an
-action and its creator is derrived automatically:
+action and its creator is derived automatically:
 
 ```ts
 import { createReducer } from '@calmdownval/predux';
@@ -80,7 +81,7 @@ the store whenever you need to.
 
 ```ts
 import { Dispatch } from '@calmdownval/predux';
-import { IAppState, CounterType } from '../types';
+import { IAppState, CounterType } from '~/store/types';
 import { setCounter } from './setCounter';
 import { apiError } from './apiError';
 
@@ -111,7 +112,7 @@ exported `Signal` utility:
 
 ```ts
 import { Signal } from '@calmdownval/predux';
-import { store } from '@src/store';
+import { store } from '~/store';
 
 const onStateChanged = () => {
     // ...
@@ -127,4 +128,4 @@ Signal.off(store.stateChanged, onStateChanged);
 These notifications are batched using `requestAnimationFrame` when available or
 `setTimeout` with zero delay otherwise. If you wish to avoid the batching
 mechanism, the `dispatch` method provides a second, optional argument which when
-set to true will cause listeners to be notified immediatelly.
+set to true will cause listeners to be notified immediately.

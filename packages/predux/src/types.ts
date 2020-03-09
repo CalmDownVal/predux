@@ -11,8 +11,11 @@ export interface ActionCreator<TState = {}, TAction extends Action = Action>
 	(...args: unknown[]): TAction | Thunk<TState, TAction>;
 }
 
-export type Dispatch<TState = {}, TAction extends Action = Action> =
-	(action: TAction | Thunk<TState, TAction>, forceImmediate?: boolean) => void;
+export interface Dispatch<TState = {}, TAction extends Action = Action>
+{
+	(action: TAction, forceImmediate?: boolean): void;
+	<TThunk extends Thunk<TState, TAction>>(action: TThunk, forceImmediate?: boolean): ReturnType<TThunk>;
+}
 
 export interface Reducer<TState = {}, TArgs extends any[] = any, TKey extends string = string>
 {
@@ -28,7 +31,7 @@ export interface Store<TState = {}, TAction extends Action = Action>
 }
 
 export type Thunk<TState = {}, TAction extends Action = Action> =
-	(dispatch: (action: TAction) => void, getState: () => TState) => void;
+	(dispatch: Dispatch<TState, TAction>, getState: () => TState) => Promise<void> | void;
 
 export type WithReturnType<TFunc, TReturn> =
 	(...args: Arguments<TFunc>) => TReturn;
