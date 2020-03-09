@@ -1,18 +1,18 @@
 {
 	"extends": [
 		"plugin:@typescript-eslint/recommended",
-		"plugin:react/recommended"
+		"plugin:import/errors",
+		"plugin:import/warnings",
+		"plugin:import/typescript"
 	],
 	"parser": "@typescript-eslint/parser",
 	"parserOptions": {
-		"ecmaFeatures": {
-			"jsx": true
-		},
 		"ecmaVersion": 2018,
 		"sourceType": "module"
 	},
 	"root": true,
 	"rules": {
+		"no-bitwise": "off",
 		"no-trailing-spaces": "warn",
 		"no-console": "warn",
 		"no-alert": "warn",
@@ -22,7 +22,6 @@
 		"eol-last": "warn",
 		"camelcase": "warn",
 		"no-empty": "warn",
-		"no-bitwise": "off",
 		"no-param-reassign": "error",
 		"arrow-spacing": "warn",
 		"arrow-body-style": [
@@ -57,18 +56,6 @@
 			"warn",
 			"as-needed"
 		],
-		"sort-imports": [
-			"warn",
-			{
-				"ignoreCase": true,
-				"memberSyntaxSortOrder": [
-					"single",
-					"multiple",
-					"all",
-					"none"
-				]
-			}
-		],
 		"sort-keys": [
 			"warn",
 			"asc",
@@ -80,9 +67,10 @@
 		// typescript
 		"@typescript-eslint/explicit-function-return-type": "off",
 		"@typescript-eslint/no-untyped-public-signature": "off",
-		"@typescript-eslint/explicit-member-accessibility": "warn",
 		"@typescript-eslint/no-non-null-assertion": "off",
+		"@typescript-eslint/no-inferrable-types": "off",
 		"@typescript-eslint/no-explicit-any": "off",
+		"@typescript-eslint/explicit-member-accessibility": "warn",
 		"@typescript-eslint/interface-name-prefix": [
 			"warn",
 			{
@@ -103,32 +91,31 @@
 			"allman"
 		],
 
-		// preact
-		"react/no-did-update-set-state": "error",
-		"react/react-in-jsx-scope": "error",
-		"react/self-closing-comp": "warn",
-		"react/prop-types": "off",
-		"react/no-unknown-property": [
-			"error",
+		// imports
+		"import/order": [
+			"warn",
 			{
-				"ignore": [
-					"class"
-				]
-			}
-		],
-		"react/jsx-no-bind": [
-			"error",
-			{
-				"allowArrowFunctions": true,
-				"allowBind": false,
-				"ignoreRefs": true
+				"groups": [
+					"builtin",
+					[ "external", "internal" ],
+					[ "sibling", "parent", "index" ]
+				],
+				"newlines-between": "always",
+				"alphabetize": {
+					"order": "asc",
+					"caseInsensitive": true
+				}
 			}
 		]
 	},
 	"settings": {
-		"react": {
-			"pragma": "h",
-			"version": "16.12"
+		"import/resolver": {
+			"typescript": {
+				"directory": [
+					"./packages/preact-predux/tsconfig.json",
+					"./packages/predux/tsconfig.json"
+				]
+			}
 		}
 	}
 }
