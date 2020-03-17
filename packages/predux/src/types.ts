@@ -1,4 +1,4 @@
-import { Signal } from './signal';
+import type { Signal } from './signal';
 
 export type Action<TArgs extends any[] = any, TKey extends string = string> =
 	((type: TKey, ...args: TArgs) => unknown) extends (...args: infer U) => unknown ? Readonly<U> : never;

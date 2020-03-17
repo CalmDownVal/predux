@@ -1,5 +1,5 @@
 import * as Signal from './signal';
-import { Action, Reducer, Store, Thunk } from './types';
+import type { Action, Reducer, Store, Thunk } from './types';
 
 const [ scheduleFrame, cancelFrame ] =
 	typeof requestAnimationFrame === 'function' && typeof cancelAnimationFrame === 'function'

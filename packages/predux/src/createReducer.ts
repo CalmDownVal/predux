@@ -1,4 +1,4 @@
-import { Action, Reducer } from './types';
+import type { Action, Reducer } from './types';
 
 interface CreateReducer
 {

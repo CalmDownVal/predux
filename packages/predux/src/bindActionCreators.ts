@@ -1,4 +1,4 @@
-import { Action, Dispatch, DispatchMap, Thunk, WithReturnType } from './types';
+import type { Action, Dispatch, DispatchMap, Thunk, WithReturnType } from './types';
 
 export type BoundActionCreators<T> =
 	{ [K in keyof T]: WithReturnType<T[K], T[K] extends Thunk<any, any> ? ReturnType<T[K]> : void> };
