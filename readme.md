@@ -7,8 +7,8 @@ This is a monorepo containing the store implementation as well as bindings for
 Preact. For detailed information about the individual modules, refer to their
 respective readme files:
 
-- [predux](workspaces/predux)
-- [preact-predux](workspaces/preact-predux)
+- [predux](packages/predux)
+- [preact-predux](packages/preact-predux)
 
 ## ToDO
 
