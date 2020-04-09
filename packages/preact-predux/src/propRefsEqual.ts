@@ -1,28 +1,21 @@
-export function propRefsEqual(a: { [k: string]: unknown }, b: { [k: string]: unknown })
+export interface AnyProps
+{
+	[key: string]: unknown;
+}
+
+export function propRefsEqual(a: AnyProps, b: AnyProps)
 {
 	const keys = Object.keys(a);
 	const length = keys.length;
-	if (length !== Object.keys(b).length)
-	{
-		return false;
-	}
 
-	for (let i = 0; i !== length; ++i)
-	{
-		if (!Object.prototype.hasOwnProperty.call(b, keys[i]))
-		{
-			return false;
-		}
-	}
-
-	for (let i = 0; i !== length; ++i)
+	for (let i = 0; i < length; ++i)
 	{
 		const key = keys[i];
-		if (a[key] !== b[key])
+		if (!(a[key] === b[key] && Object.prototype.hasOwnProperty.call(b, key)))
 		{
 			return false;
 		}
 	}
 
-	return true;
+	return length === Object.keys(b).length;
 }

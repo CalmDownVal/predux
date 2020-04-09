@@ -4,8 +4,6 @@
 		"charset": "utf8",
 		"declaration": true,
 		"forceConsistentCasingInFileNames": true,
-		"jsx": "react",
-		"jsxFactory": "h",
 		"lib": [
 			"dom",
 			"esnext"
@@ -15,7 +13,8 @@
 		"newLine": "lf",
 		"outDir": "./dist",
 		"strict": true,
-		"target": "esnext"
+		"target": "esnext",
+		"types": []
 	},
 	"include": [
 		"./src/**/*"

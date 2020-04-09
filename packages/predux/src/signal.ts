@@ -1,14 +1,16 @@
+type Handler<T> = (args: T) => void;
+
 export interface Signal<T = void>
 {
 	(event: T): void;
-	list: ((event: T) => void)[];
+	list: Handler<T>[];
 	lock: () => void;
 }
 
 export function create<T = void>(): Signal<T>
 {
 	let isUsingList = false;
-	const signal = ((event: T) =>
+	const signal = (event: T) =>
 	{
 		isUsingList = true;
 		const snapshot = signal.list;
@@ -18,9 +20,9 @@ export function create<T = void>(): Signal<T>
 			snapshot[i](event);
 		}
 		isUsingList = false;
-	}) as Signal<T>;
+	};
 
-	signal.list = [];
+	signal.list = [] as Handler<T>[];
 	signal.lock = () =>
 	{
 		if (isUsingList)
@@ -33,15 +35,15 @@ export function create<T = void>(): Signal<T>
 	return signal;
 }
 
-export function on<T>(signal: Signal<T>, slot: (event: T) => void)
+export function on<T>(signal: Signal<T>, handler: Handler<T>)
 {
 	signal.lock();
-	signal.list.push(slot);
+	signal.list.push(handler);
 }
 
-export function off<T>(signal: Signal<T>, slot: (event: T) => void)
+export function off<T>(signal: Signal<T>, handler: Handler<T>)
 {
-	const index = signal.list.lastIndexOf(slot);
+	const index = signal.list.lastIndexOf(handler);
 	if (index !== -1)
 	{
 		signal.lock();

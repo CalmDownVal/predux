@@ -1,28 +1,46 @@
 import type { Action, Reducer } from './types';
 
+interface BaseActionCreator<TArgs extends any[], TKey extends string = string>
+{
+	(...args: TArgs): Action<TArgs, TKey>;
+	readonly type: TKey;
+}
+
 interface CreateReducer
 {
-	<TState extends object, TArgs extends any[]>(
-		fn: (state: TState, ...args: TArgs) => TState
-	): Readonly<[ Reducer<TState, TArgs>, (...args: TArgs) => Action<TArgs> ]>;
+	<TState, TArgs extends any[]>(
+		baseReducer: (state: TState, ...args: TArgs) => TState
+	): Readonly<[ Reducer<TState, TArgs>, BaseActionCreator<TArgs> ]>;
 
-	<TState extends object, TArgs extends any[], TKey extends string>(
-		type: TKey, fn: (state: TState, ...args: TArgs) => TState
-	): Readonly<[ Reducer<TState, TArgs, TKey>, (...args: TArgs) => Action<TArgs, TKey> ]>;
+	<TState, TArgs extends any[], TKey extends string>(
+		type: TKey, baseReducer: (state: TState, ...args: TArgs) => TState
+	): Readonly<[ Reducer<TState, TArgs, TKey>, BaseActionCreator<TArgs, TKey> ]>;
 }
 
 let indexer = 0;
-function dryCreateReducer()
+export const createReducer: CreateReducer = function ()
 {
-	/* eslint-disable prefer-rest-params */
-	const reducer = arguments[arguments.length - 1].bind(null) as Reducer;
-	const type: string = arguments.length === 1
-		? `A${++indexer}`
-		: arguments[0];
-	/* eslint-enable prefer-rest-params */
+	const type: string = arguments.length === 1 ? `A${++indexer}` : arguments[0];
+	const reducer: { (...args: unknown[]): unknown; type: string } = arguments[arguments.length - 1].bind(null);
+
+	// speedier version of
+	// (...args) => [ type, ...args ] as const;
+	const actionCreator = function ()
+	{
+		const length = arguments.length;
+		const action = new Array(length + 1) as [ string, ...unknown[] ];
+
+		action[0] = type;
+		for (let i = 0; i < length; ++i)
+		{
+			action[i + 1] = arguments[i];
+		}
+
+		return action;
+	};
 
 	reducer.type = type;
-	return [ reducer, (...args: unknown[]) => [ type, ...args ] as const ] as const;
-}
+	actionCreator.type = type;
 
-export const createReducer: CreateReducer = dryCreateReducer;
+	return [ reducer, actionCreator ] as const;
+};

@@ -1,26 +1,37 @@
 import * as Signal from './signal';
-import type { Action, Reducer, Store, Thunk } from './types';
+import type { Action, Reducer, ReducerGroup, Store, Thunk } from './types';
 
 const [ scheduleFrame, cancelFrame ] =
 	typeof requestAnimationFrame === 'function' && typeof cancelAnimationFrame === 'function'
 		? [ requestAnimationFrame, cancelAnimationFrame ] as const
 		: [ setTimeout, clearTimeout ] as const;
 
-export function createStore<TState = {}, TAction extends Action = Action>(initialState: TState, reducers: Reducer<TState>[]): Store<TState, TAction>
+export function createStore<TState = {}, TAction extends Action = Action>(initialState: TState, reducers: ReducerGroup<TState>): Store<TState, TAction>
 {
-	let isDispatching = false;
+	let blockDispatch = false;
 	let frameId = 0;
 	let lastState: TState | null = null;
 	let state = initialState;
 
 	const reducerMap: { [key: string]: Reducer<TState> | undefined } = {};
-	for (const reducer of reducers)
+	for (const groups = [ reducers ]; groups.length !== 0; )
 	{
-		if (reducerMap[reducer.type] !== undefined)
+		const group = groups.pop()!;
+		for (const item of group)
 		{
-			throw new Error('cannot register multiple reducers for the same action');
+			if (Array.isArray(item))
+			{
+				groups.push(item);
+				continue;
+			}
+
+			if (reducerMap[item.type] !== undefined)
+			{
+				throw new Error('cannot register multiple reducers for the same action');
+			}
+
+			reducerMap[item.type] = item;
 		}
-		reducerMap[reducer.type] = reducer;
 	}
 
 	const stateChanged = Signal.create();
@@ -41,9 +52,9 @@ export function createStore<TState = {}, TAction extends Action = Action>(initia
 	};
 
 	const getState = () => state;
-	const dispatch = (action: TAction | Thunk<TState, TAction>, forceImmediate?: boolean) =>
+	const dispatch = (action: TAction | Thunk<any, TState, TAction>, forceImmediate?: boolean) =>
 	{
-		if (isDispatching)
+		if (blockDispatch)
 		{
 			throw new Error('cannot dispatch from a reducer');
 		}
@@ -55,17 +66,19 @@ export function createStore<TState = {}, TAction extends Action = Action>(initia
 
 		try
 		{
-			const [ type, ...args ] = action;
-			const reducer = reducerMap[type];
+			const reducer = reducerMap[action[0]];
 			if (reducer)
 			{
-				isDispatching = true;
+				blockDispatch = true;
 				if (lastState === null)
 				{
 					lastState = state;
 				}
 
-				state = reducer(state, ...args);
+				const args = action.slice() as [ TState, ...unknown[] ];
+				args[0] = state;
+
+				state = reducer.apply(null, args);
 				if (forceImmediate === true)
 				{
 					if (frameId !== 0)
@@ -73,7 +86,7 @@ export function createStore<TState = {}, TAction extends Action = Action>(initia
 						cancelFrame(frameId);
 					}
 
-					isDispatching = false;
+					blockDispatch = false;
 					notifyListeners();
 				}
 				else if (frameId === 0)
@@ -84,7 +97,7 @@ export function createStore<TState = {}, TAction extends Action = Action>(initia
 		}
 		finally
 		{
-			isDispatching = false;
+			blockDispatch = false;
 		}
 	};
 

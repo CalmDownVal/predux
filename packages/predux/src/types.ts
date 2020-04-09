@@ -5,25 +5,24 @@ export type Action<TArgs extends any[] = any, TKey extends string = string> =
 
 export interface ActionCreator<TState = {}, TAction extends Action = Action>
 {
-	(...args: unknown[]): TAction | Thunk<TState, TAction>;
+	(...args: unknown[]): TAction | Thunk<any, TState, TAction>;
 }
 
 export interface Dispatch<TState = {}, TAction extends Action = Action>
 {
-	(action: TAction, forceImmediate?: boolean): void;
-	<TThunk extends Thunk<TState, TAction>>(action: TThunk, forceImmediate?: boolean): ReturnType<TThunk>;
-}
-
-export interface DispatchMap<TState = {}, TAction extends Action = Action>
-{
-	[key: string]: undefined | ActionCreator<TState, TAction>;
+	<T extends TAction | Thunk<any, TState, TAction>>(
+		action: T,
+		forceImmediate?: boolean
+	): T extends Thunk<infer R, TState, TAction> ? R : void;
 }
 
 export interface Reducer<TState = {}, TArgs extends any[] = any, TKey extends string = string>
 {
 	(state: TState, ...args: TArgs): TState;
-	type: TKey;
+	readonly type: TKey;
 }
+
+export type ReducerGroup<TState> = (Reducer<TState> | ReducerGroup<TState>)[];
 
 export interface Store<TState = {}, TAction extends Action = Action>
 {
@@ -32,11 +31,7 @@ export interface Store<TState = {}, TAction extends Action = Action>
 	stateChanged: Signal;
 }
 
-type Arguments<TFunc> =
-	TFunc extends (...args: infer TArgs) => unknown ? TArgs : never;
-
-export type Thunk<TState = {}, TAction extends Action = Action> =
-	(dispatch: Dispatch<TState, TAction>, getState: () => TState) => void | Promise<void>;
-
-export type WithReturnType<TFunc, TReturn> =
-	(...args: Arguments<TFunc>) => TReturn;
+export interface Thunk<TResult, TState = {}, TAction extends Action = Action>
+{
+	(dispatch: Dispatch<TState, TAction>, getState: () => TState): TResult;
+}
