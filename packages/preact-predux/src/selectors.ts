@@ -106,7 +106,6 @@ function createSelector({ fn, needsProps, selectors }: Attrs): InitializedSelect
 			values[i] = selectors[i](state, props);
 		}
 
-		// eslint-disable-next-line prefer-spread
 		return fn.apply(null, values);
 	};
 
@@ -141,7 +140,6 @@ function createSelectorMemo({ fn, needsProps, selectors }: Attrs): InitializedSe
 
 		if (didChange)
 		{
-			// eslint-disable-next-line prefer-spread
 			lastResult = fn.apply(null, values);
 		}
 
@@ -178,9 +176,9 @@ function createFactory(attrs: Attrs, subFactory: (attrs: Attrs) => InitializedSe
 }
 
 
-type UnboxState<T> = T extends readonly Selector<infer S, any, any>[] ? S : unknown;
-type UnboxProps<T> = T extends readonly Selector<any, infer P, any>[] ? P : unknown;
-type UnboxValue<T> = { [K in keyof T]: T[K] extends Selector<any, any, infer V> ? V : never };
+type UnboxState<T> = T extends readonly Selector<infer S, never, never>[] ? S : unknown;
+type UnboxProps<T> = T extends readonly Selector<never, infer P, never>[] ? P : unknown;
+type UnboxValue<T> = { [K in keyof T]: T[K] extends Selector<never, never, infer V> ? V : never };
 
 interface ComposeState
 {
@@ -268,17 +266,17 @@ interface ComposeStateAndProps
 	): StateAndPropsSelectorOrFactory<TState, TProps, TReturn>;
 }
 
-function _compose(...args: unknown[])
+function _compose()
 {
-	const attrs = getAttributes(args, false);
+	const attrs = getAttributes(arguments as never, false);
 	return attrs.needsFactory
 		? createFactory(attrs, createSelector)
 		: createSelector(attrs);
 }
 
-function _composeMemo(...args: unknown[])
+function _composeMemo()
 {
-	const attrs = getAttributes(args, true);
+	const attrs = getAttributes(arguments as never, true);
 	return attrs.needsFactory
 		? createFactory(attrs, createSelectorMemo)
 		: createSelectorMemo(attrs);

@@ -12,7 +12,7 @@ type ConnectHOC<TConnectedProps = {}> =
 
 interface Connect
 {
-	<TState, TOwnProps, TStateMap extends StateMap<TState, TOwnProps>, TDispatchMap extends DispatchMap<TState, TOwnProps>>(
+	<TStateMap extends StateMap, TDispatchMap extends DispatchMap>(
 		stateMap?: TStateMap,
 		dispatchMap?: TDispatchMap
 	): ConnectHOC<InferStatePropTypes<TStateMap> & InferDispatchPropTypes<TDispatchMap>>;
@@ -29,7 +29,7 @@ export const connect: Connect = <TState = never, TOwnProps = never, TStateMap ex
 {
 	const initComponent = () =>
 		({
-			jsx: null as VNode<any> | null,
+			jsx: null as VNode | null,
 
 			prevOwnProps: null,
 			prevProps: {},
@@ -102,48 +102,48 @@ export const connect: Connect = <TState = never, TOwnProps = never, TStateMap ex
 			{
 				instance.jsx = h(
 					context.Provider,
-					{ value: instance.storeOverride } as any,
-					h(Component, nextProps as any));
+					{ value: instance.storeOverride } as never,
+					h(Component, nextProps as never));
 			}
 
 			return instance.jsx;
 		};
 
 		Connected.displayName = `Connect(${Component.displayName || Component.name || ''})`;
-		return Connected as FunctionalComponent<any>;
+		return Connected as FunctionalComponent<unknown>;
 	};
 };
 
 type ConnectedProps<
 	TOwnProps,
-	TStateMap extends StateMap<never, never>,
-	TDispatchMap extends DispatchMap<never, never>> =
+	TStateMap extends StateMap,
+	TDispatchMap extends DispatchMap> =
 		& TOwnProps
 		& InferStatePropTypes<TStateMap>
 		& InferDispatchPropTypes<TDispatchMap>;
 
 export type UnconnectedFunctionalComponent<
-	TOwnProps extends object = {},
-	TStateMap extends StateMap<never, never> = {},
-	TDispatchMap extends DispatchMap<never, never> = {}>
+	TOwnProps = {},
+	TStateMap extends StateMap = {},
+	TDispatchMap extends DispatchMap = {}>
 	= FunctionalComponent<ConnectedProps<TOwnProps, TStateMap, TDispatchMap>>;
 
 export type UFC<
-	TOwnProps extends object = {},
-	TStateMap extends StateMap<never, never> = {},
-	TDispatchMap extends DispatchMap<never, never> = {}>
+	TOwnProps = {},
+	TStateMap extends StateMap = {},
+	TDispatchMap extends DispatchMap = {}>
 	= UnconnectedFunctionalComponent<TOwnProps, TStateMap, TDispatchMap>;
 
 export type UnconnectedComponent<
-	TOwnProps extends object = {},
-	TOwnContext extends object = {},
-	TStateMap extends StateMap<never, never> = {},
-	TDispatchMap extends DispatchMap<never, never> = {}>
+	TOwnProps = {},
+	TOwnContext = {},
+	TStateMap extends StateMap = {},
+	TDispatchMap extends DispatchMap = {}>
 	= ClassComponent<ConnectedProps<TOwnProps, TStateMap, TDispatchMap>, TOwnContext>;
 
 export type UC<
-	TOwnProps extends object = {},
-	TOwnContext extends object = {},
-	TStateMap extends StateMap<never, never> = {},
-	TDispatchMap extends DispatchMap<never, never> = {}>
+	TOwnProps = {},
+	TOwnContext = {},
+	TStateMap extends StateMap = {},
+	TDispatchMap extends DispatchMap = {}>
 	= UnconnectedComponent<TOwnProps, TOwnContext, TStateMap, TDispatchMap>;

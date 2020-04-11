@@ -13,6 +13,7 @@ respective readme files:
 ## ToDO
 
 - Tests, tests, tests! Current coverage is 0%
+- Measure performance (re-render counts)
 - Some more docs
 - Create a debugging middleware/plugin
 - Get to a v1.0 release

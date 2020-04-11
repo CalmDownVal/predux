@@ -3,7 +3,7 @@ import type { Store } from '@calmdownval/predux';
 import type { AnyProps } from './propRefsEqual';
 import { isFactory, isUsingProps, Selector } from './selectors';
 
-export interface StateMap<TState, TOwnProps>
+export interface StateMap<TState = never, TOwnProps = never>
 {
 	[key: string]: Selector<TState, TOwnProps, any>;
 }

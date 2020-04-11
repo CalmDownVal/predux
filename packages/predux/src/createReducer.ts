@@ -1,6 +1,6 @@
 import type { Action, Reducer } from './types';
 
-interface BaseActionCreator<TArgs extends any[], TKey extends string = string>
+interface BaseActionCreator<TArgs extends unknown[], TKey extends string = string>
 {
 	(...args: TArgs): Action<TArgs, TKey>;
 	readonly type: TKey;
@@ -8,11 +8,11 @@ interface BaseActionCreator<TArgs extends any[], TKey extends string = string>
 
 interface CreateReducer
 {
-	<TState, TArgs extends any[]>(
+	<TState, TArgs extends unknown[]>(
 		baseReducer: (state: TState, ...args: TArgs) => TState
 	): Readonly<[ Reducer<TState, TArgs>, BaseActionCreator<TArgs> ]>;
 
-	<TState, TArgs extends any[], TKey extends string>(
+	<TState, TArgs extends unknown[], TKey extends string>(
 		type: TKey, baseReducer: (state: TState, ...args: TArgs) => TState
 	): Readonly<[ Reducer<TState, TArgs, TKey>, BaseActionCreator<TArgs, TKey> ]>;
 }

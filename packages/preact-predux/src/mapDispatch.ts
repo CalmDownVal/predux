@@ -7,12 +7,23 @@ interface DispatchMapObject<TState>
 	[key: string]: ActionCreator<TState>;
 }
 
-export type DispatchMap<TState, TOwnProps> =
+export type DispatchMap<TState = never, TOwnProps = never> =
 	| DispatchMapObject<TState>
-	| ((props: TOwnProps) => DispatchMapObject<TState>);
+	| ((props?: TOwnProps) => DispatchMapObject<TState>);
 
-export type InferDispatchPropTypes<T extends DispatchMap<never, never>> =
-	T extends (...args: any) => any ? ReturnType<T> : T;
+type ArgumentsOf<TFunc> =
+	TFunc extends (...args: infer TArgs) => unknown ? TArgs : never;
+
+type WithReturnType<TFunc, TReturn> =
+	(...args: ArgumentsOf<TFunc>) => TReturn;
+
+type ResolveThunks<T> =
+	T extends DispatchMapObject<never>
+		? { [K in keyof T]: WithReturnType<T[K], ReturnType<T[K]> extends (...args: unknown[]) => infer R ? R : void> }
+		: {};
+
+export type InferDispatchPropTypes<T extends DispatchMap> =
+	ResolveThunks<T extends (...args: unknown[]) => unknown ? ReturnType<T> : T>;
 
 interface Proxy<TState>
 {
@@ -26,7 +37,7 @@ function createProxy<TState>(store: Store<TState>)
 	{
 		endpoint: function ()
 		{
-			return store.dispatch(proxy.action!.apply(null, arguments as any));
+			return store.dispatch(proxy.action!.apply(null, arguments as never));
 		}
 	};
 	return proxy;
@@ -68,7 +79,7 @@ export function initDispatchMap<TState, TOwnProps>(map?: DispatchMap<TState, TOw
 
 		for (const key in dispatchers)
 		{
-			target[key] = dispatchers[key]!.action;
+			target[key] = dispatchers[key]!.endpoint;
 		}
 	};
 }
