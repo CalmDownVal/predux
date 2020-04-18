@@ -1,6 +1,6 @@
 {
 	"name": "@calmdownval/preact-predux",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"license": "MIT",
 	"main": "dist/index.js",
 	"types": "dist/index.d.ts",
@@ -15,7 +15,7 @@
 		"typescript": "3.8.x"
 	},
 	"scripts": {
-		"build": "rm -rf dist/ && tsc",
+		"build": "rm -rf dist/* && tsc",
 		"prepublishOnly": "npm run build"
 	}
 }

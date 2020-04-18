@@ -18,9 +18,14 @@ export function groupReducers<TName extends string, TSubState>(name: TName, redu
 			}
 
 			const newSubState = subReducer.apply(null, args);
-			return oldSubState === newSubState
-				? state
-				: { ...state, [name]: newSubState };
+			if (oldSubState === newSubState)
+			{
+				return state;
+			}
+
+			const newState = Object.assign({}, state);
+			newState[name] = newSubState;
+			return newState;
 		};
 
 		reducer.type = subReducer.type;
