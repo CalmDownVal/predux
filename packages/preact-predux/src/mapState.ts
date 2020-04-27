@@ -1,6 +1,6 @@
 import type { Store } from '@calmdownval/predux';
 
-import type { AnyProps } from './propRefsEqual';
+import type { AnyProps } from './propsShallowEqual';
 import { isFactory, isUsingProps, Selector } from './selectors';
 
 export interface StateMap<TState = never, TOwnProps = never>

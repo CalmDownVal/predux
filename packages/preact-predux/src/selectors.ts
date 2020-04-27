@@ -1,52 +1,106 @@
-interface StateSelector<TState = unknown, TReturn = unknown>
-{
-	(state: TState): TReturn;
-	isFactory?: boolean;
-	isUsingProps?: boolean;
-}
-
-interface StateAndPropsSelector<TState = unknown, TProps = unknown, TReturn = unknown>
+interface SelectorFn<TReturn = unknown, TState = unknown, TProps = unknown>
 {
 	(state: TState, props: TProps): TReturn;
 	isFactory?: boolean;
 	isUsingProps?: boolean;
 }
 
-interface SelectorFactory<TState = unknown, TProps = unknown, TReturn = unknown>
+interface SelectorFactory<TReturn = unknown, TState = unknown, TProps = unknown>
 {
-	(): StateAndPropsSelector<TState, TProps, TReturn>;
+	(): SelectorFn<TReturn, TState, TProps>;
 	isFactory?: boolean;
 	isUsingProps?: boolean;
 }
 
-
-type StateAndPropsSelectorOrFactory<TState, TProps, TReturn> =
-	| StateAndPropsSelector<TState, TProps, TReturn>
-	| SelectorFactory<TState, TProps, TReturn>;
-
-type InitializedSelector<TState = unknown, TProps = unknown, TReturn = unknown> =
-	| StateSelector<TState, TReturn>
-	| StateAndPropsSelector<TState, TProps, TReturn>;
-
-export type Selector<TState = unknown, TProps = unknown, TReturn = unknown> =
-	| StateSelector<TState, TReturn>
-	| StateAndPropsSelectorOrFactory<TState, TProps, TReturn>;
+export type Selector<TReturn = unknown, TState = unknown, TProps = unknown> =
+	| SelectorFn<TReturn, TState, TProps>
+	| SelectorFactory<TReturn, TState, TProps>;
 
 
-export function isUsingProps(selector: unknown): selector is StateAndPropsSelector
-{
-	return typeof selector === 'function' && selector.length >= 2 && (selector as Selector).isUsingProps !== false;
-}
-
-export function isFactory(selector: unknown): selector is SelectorFactory
+export function isFactory<TReturn, TState, TProps>(selector: Selector<TReturn, TState, TProps>): selector is SelectorFactory<TReturn, TState, TProps>
 {
 	return typeof selector === 'function' && selector.length === 0 && (selector as Selector).isFactory === true;
 }
 
-
-function getAttributes(args: unknown[], willMemo: boolean)
+export function isUsingProps<TReturn, TState, TProps>(selector: Selector<TReturn, TState, TProps>): selector is SelectorFn<TReturn, TState, TProps>
 {
-	let selectors = args as Selector[];
+	return typeof selector === 'function' && selector.length >= 2 && (selector as Selector).isUsingProps !== false;
+}
+
+
+type UnboxState<T> = T extends readonly Selector<unknown, infer S, never>[] ? S : never;
+type UnboxProps<T> = T extends readonly Selector<unknown, never, infer P>[] ? P : never;
+type UnboxValue<T> = { [K in keyof T]: T[K] extends Selector<infer V, never, never> ? V : never };
+
+interface Compose
+{
+	<TSelectors extends readonly Selector<any, any, any>[], TReturn>(
+		s: TSelectors,
+		fn: (...args: UnboxValue<TSelectors>) => TReturn
+	): Selector<TReturn, UnboxState<TSelectors>, UnboxProps<TSelectors>>;
+
+	<T1, TReturn, TState, TProps = void>(
+		s1: Selector<T1, TState, TProps>,
+		fn: (a1: T1) => TReturn
+	): Selector<TReturn, TState, TProps>;
+
+	<T1, T2, TReturn, TState, TProps = void>(
+		s1: Selector<T1, TState, TProps>,
+		s2: Selector<T2, TState, TProps>,
+		fn: (a1: T1, a2: T2) => TReturn
+	): Selector<TReturn, TState, TProps>;
+
+	<T1, T2, T3, TReturn, TState, TProps = void>(
+		s1: Selector<T1, TState, TProps>,
+		s2: Selector<T2, TState, TProps>,
+		s3: Selector<T3, TState, TProps>,
+		fn: (a1: T1, a2: T2, a3: T3) => TReturn
+	): Selector<TReturn, TState, TProps>;
+
+	<T1, T2, T3, T4, TReturn, TState, TProps = void>(
+		s1: Selector<T1, TState, TProps>,
+		s2: Selector<T2, TState, TProps>,
+		s3: Selector<T3, TState, TProps>,
+		s4: Selector<T4, TState, TProps>,
+		fn: (a1: T1, a2: T2, a3: T3, a4: T4) => TReturn
+	): Selector<TReturn, TState, TProps>;
+
+	<T1, T2, T3, T4, T5, TReturn, TState, TProps = void>(
+		s1: Selector<T1, TState, TProps>,
+		s2: Selector<T2, TState, TProps>,
+		s3: Selector<T3, TState, TProps>,
+		s4: Selector<T4, TState, TProps>,
+		s5: Selector<T5, TState, TProps>,
+		fn: (a1: T1, a2: T2, a3: T3, a4: T4, a5: T5) => TReturn
+	): Selector<TReturn, TState, TProps>;
+}
+
+interface CallSelector
+{
+	<TReturn, TState, TProps extends {}>(
+		selector: Selector<TReturn, TState, TProps>,
+		state: TState,
+		props: TProps
+	): TReturn;
+
+	<TReturn, TState>(
+		selector: Selector<TReturn, TState, void>,
+		state: TState
+	): TReturn;
+}
+
+interface Attrs
+{
+	fn: (...args: unknown[]) => unknown;
+	needsFactory: boolean;
+	needsProps: boolean;
+	selectors: Selector[];
+}
+
+
+function getAttributes(args: Selector[], willMemo: boolean)
+{
+	let selectors = args;
 	let length = args.length - 1;
 
 	// get the implementation
@@ -64,7 +118,7 @@ function getAttributes(args: unknown[], willMemo: boolean)
 	}
 
 	// make a copy to allow mutations later
-	selectors = selectors.slice(0, length);
+	selectors = Array.prototype.slice.call(selectors, 0, length);
 
 	let needsFactory = false;
 	let needsProps = false;
@@ -92,12 +146,9 @@ function getAttributes(args: unknown[], willMemo: boolean)
 	return { fn, needsFactory, needsProps, selectors };
 }
 
-
-type Attrs = ReturnType<typeof getAttributes>;
-
-function createSelector({ fn, needsProps, selectors }: Attrs): InitializedSelector
+function createSelector({ fn, needsProps, selectors }: Attrs)
 {
-	const selector = (state: unknown, props?: unknown) =>
+	const selector = (state: unknown, props: unknown) =>
 	{
 		const length = selectors.length;
 		const values = new Array(length);
@@ -115,12 +166,12 @@ function createSelector({ fn, needsProps, selectors }: Attrs): InitializedSelect
 	return selector;
 }
 
-function createSelectorMemo({ fn, needsProps, selectors }: Attrs): InitializedSelector
+function createSelectorMemo({ fn, needsProps, selectors }: Attrs)
 {
 	let values: unknown[] | undefined;
 	let lastResult: unknown = null;
 
-	const selector = (state: unknown, props?: unknown) =>
+	const selector = (state: unknown, props: unknown) =>
 	{
 		const length = selectors.length;
 		let didChange = false;
@@ -152,7 +203,7 @@ function createSelectorMemo({ fn, needsProps, selectors }: Attrs): InitializedSe
 	return selector;
 }
 
-function createFactory(attrs: Attrs, subFactory: (attrs: Attrs) => InitializedSelector): SelectorFactory
+function createFactory(attrs: Attrs, subFactory: (attrs: Attrs) => SelectorFn)
 {
 	const factory = () =>
 	{
@@ -166,7 +217,7 @@ function createFactory(attrs: Attrs, subFactory: (attrs: Attrs) => InitializedSe
 			}
 		}
 
-		return subFactory(attrs) as StateAndPropsSelector;
+		return subFactory(attrs) as SelectorFn;
 	};
 
 	factory.isFactory = true;
@@ -175,132 +226,21 @@ function createFactory(attrs: Attrs, subFactory: (attrs: Attrs) => InitializedSe
 	return factory;
 }
 
-
-type UnboxState<T> = T extends readonly Selector<infer S, never, never>[] ? S : unknown;
-type UnboxProps<T> = T extends readonly Selector<never, infer P, never>[] ? P : unknown;
-type UnboxValue<T> = { [K in keyof T]: T[K] extends Selector<never, never, infer V> ? V : never };
-
-interface ComposeState
-{
-	<TSelectors extends readonly StateSelector<any, any>[], TReturn>(
-		s: TSelectors,
-		fn: (...args: UnboxValue<TSelectors>) => TReturn
-	): StateSelector<UnboxState<TSelectors>, TReturn>;
-
-	<TState, T1, TReturn>(
-		s1: StateSelector<TState, T1>,
-		fn: (a1: T1) => TReturn
-	): StateSelector<TState, TReturn>;
-
-	<TState, T1, T2, TReturn>(
-		s1: StateSelector<TState, T1>,
-		s2: StateSelector<TState, T2>,
-		fn: (a1: T1, a2: T2) => TReturn
-	): StateSelector<TState, TReturn>;
-
-	<TState, T1, T2, T3, TReturn>(
-		s1: StateSelector<TState, T1>,
-		s2: StateSelector<TState, T2>,
-		s3: StateSelector<TState, T3>,
-		fn: (a1: T1, a2: T2, a3: T3) => TReturn
-	): StateSelector<TState, TReturn>;
-
-	<TState, T1, T2, T3, T4, TReturn>(
-		s1: StateSelector<TState, T1>,
-		s2: StateSelector<TState, T2>,
-		s3: StateSelector<TState, T3>,
-		s4: StateSelector<TState, T4>,
-		fn: (a1: T1, a2: T2, a3: T3, a4: T4) => TReturn
-	): StateSelector<TState, TReturn>;
-
-	<TState, T1, T2, T3, T4, T5, TReturn>(
-		s1: StateSelector<TState, T1>,
-		s2: StateSelector<TState, T2>,
-		s3: StateSelector<TState, T3>,
-		s4: StateSelector<TState, T4>,
-		s5: StateSelector<TState, T5>,
-		fn: (a1: T1, a2: T2, a3: T3, a4: T4, a5: T5) => TReturn
-	): StateSelector<TState, TReturn>;
-}
-
-interface ComposeStateAndProps
-{
-	<TSelectors extends readonly Selector<any, any, any>[], TReturn>(
-		s: TSelectors,
-		fn: (...args: UnboxValue<TSelectors>) => TReturn
-	): StateAndPropsSelectorOrFactory<UnboxState<TSelectors>, UnboxProps<TSelectors>, TReturn>;
-
-	<TState, TProps, T1, TReturn>(
-		s1: StateAndPropsSelector<TState, TProps, T1>,
-		fn: (a1: T1) => TReturn
-	): StateAndPropsSelectorOrFactory<TState, TProps, TReturn>;
-
-	<TState, TProps, T1, T2, TReturn>(
-		s1: StateAndPropsSelector<TState, TProps, T1>,
-		s2: StateAndPropsSelector<TState, TProps, T2>,
-		fn: (a1: T1, a2: T2) => TReturn
-	): StateAndPropsSelectorOrFactory<TState, TProps, TReturn>;
-
-	<TState, TProps, T1, T2, T3, TReturn>(
-		s1: StateAndPropsSelector<TState, TProps, T1>,
-		s2: StateAndPropsSelector<TState, TProps, T2>,
-		s3: StateAndPropsSelector<TState, TProps, T3>,
-		fn: (a1: T1, a2: T2, a3: T3) => TReturn
-	): StateAndPropsSelectorOrFactory<TState, TProps, TReturn>;
-
-	<TState, TProps, T1, T2, T3, T4, TReturn>(
-		s1: StateAndPropsSelector<TState, TProps, T1>,
-		s2: StateAndPropsSelector<TState, TProps, T2>,
-		s3: StateAndPropsSelector<TState, TProps, T3>,
-		s4: StateAndPropsSelector<TState, TProps, T4>,
-		fn: (a1: T1, a2: T2, a3: T3, a4: T4) => TReturn
-	): StateAndPropsSelectorOrFactory<TState, TProps, TReturn>;
-
-	<TState, TProps, T1, T2, T3, T4, T5, TReturn>(
-		s1: StateAndPropsSelector<TState, TProps, T1>,
-		s2: StateAndPropsSelector<TState, TProps, T2>,
-		s3: StateAndPropsSelector<TState, TProps, T3>,
-		s4: StateAndPropsSelector<TState, TProps, T4>,
-		s5: StateAndPropsSelector<TState, TProps, T5>,
-		fn: (a1: T1, a2: T2, a3: T3, a4: T4, a5: T5) => TReturn
-	): StateAndPropsSelectorOrFactory<TState, TProps, TReturn>;
-}
-
-function _compose()
+export const combine: Compose = function ()
 {
 	const attrs = getAttributes(arguments as never, false);
 	return attrs.needsFactory
 		? createFactory(attrs, createSelector)
 		: createSelector(attrs);
-}
+};
 
-function _composeMemo()
+export const combineMemo: Compose = function ()
 {
 	const attrs = getAttributes(arguments as never, true);
 	return attrs.needsFactory
 		? createFactory(attrs, createSelectorMemo)
 		: createSelectorMemo(attrs);
-}
+};
 
-export const compose = _compose as ComposeState;
-export const composeMemo = _composeMemo as ComposeState;
-export const composeProps: ComposeStateAndProps = _compose;
-export const composePropsMemo: ComposeStateAndProps = _composeMemo;
-
-
-interface CallSelector
-{
-	<TState, TReturn>(
-		selector: StateSelector<TState, TReturn>,
-		state: TState
-	): TReturn;
-
-	<TState, TProps, TReturn>(
-		selector: StateAndPropsSelectorOrFactory<TState, TProps, TReturn>,
-		state: TState,
-		props: TProps
-	): TReturn;
-}
-
-export const callSelector: CallSelector = (selector: Selector, state: unknown, props?: unknown) =>
-	(isFactory(selector) ? selector() : selector)(state, props);
+export const select: CallSelector = <TReturn, TState, TProps>(selector: Selector<TReturn, TState, TProps>, state: TState, props?: TProps) =>
+	(isFactory(selector) ? selector() : selector)(state, props!);

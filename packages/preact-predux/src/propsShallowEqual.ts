@@ -3,7 +3,7 @@ export interface AnyProps
 	[key: string]: unknown;
 }
 
-export function propRefsEqual(a: AnyProps, b: AnyProps)
+export function propsShallowEqual(a: AnyProps, b: AnyProps)
 {
 	const keys = Object.keys(a);
 	const length = keys.length;

@@ -1,6 +1,6 @@
 import type { ActionCreator, Store } from '@calmdownval/predux';
 
-import type { AnyProps } from './propRefsEqual';
+import type { AnyProps } from './propsShallowEqual';
 
 interface DispatchMapObject<TState>
 {

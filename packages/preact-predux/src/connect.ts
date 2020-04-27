@@ -1,11 +1,11 @@
-import { Signal } from '@calmdownval/predux';
+import { Signal, Store } from '@calmdownval/predux';
 import { Component as ClassComponent, ComponentType, FunctionalComponent, h, VNode } from 'preact';
 import { useContext, useLayoutEffect, useMemo, useReducer } from 'preact/hooks';
 
 import { context } from './context';
 import { DispatchMap, InferDispatchPropTypes, initDispatchMap } from './mapDispatch';
 import { InferStatePropTypes, initStateMap, StateMap } from './mapState';
-import { propRefsEqual } from './propRefsEqual';
+import { propsShallowEqual } from './propsShallowEqual';
 
 type ConnectHOC<TConnectedProps = {}> =
 	<TProps>(Component: ComponentType<TProps>) => FunctionalComponent<Omit<TProps, keyof TConnectedProps>>;
@@ -29,22 +29,21 @@ export const connect: Connect = <TState = never, TOwnProps = never, TStateMap ex
 {
 	const initComponent = () =>
 		({
+			finalProps: {},
 			jsx: null as VNode | null,
 
 			prevOwnProps: null,
-			prevProps: {},
 			prevStore: null,
 			prevX: -1,
 
-			stateChanged: Signal.create(),
-			storeOverride: {},
+			storeOverride: { stateChanged: Signal.create() } as Store,
 			updateDispatchMapping: initDispatchMap<TState, TOwnProps>(dispatchMap),
 			updateStateMapping: initStateMap(stateMap)
 		});
 
 	return <T>(Component: ComponentType<T>) =>
 	{
-		const Connected = (ownProps: TOwnProps) =>
+		const Connected = function (this: ClassComponent, ownProps: TOwnProps)
 		{
 			const store = useContext(context);
 			if (!store)
@@ -64,7 +63,7 @@ export const connect: Connect = <TState = never, TOwnProps = never, TStateMap ex
 				const onUpdate = () =>
 				{
 					forceUpdate();
-					instance.stateChanged();
+					instance.storeOverride.stateChanged();
 				};
 				Signal.on(store.stateChanged, onUpdate);
 				return () => Signal.off(store.stateChanged, onUpdate);
@@ -75,41 +74,40 @@ export const connect: Connect = <TState = never, TOwnProps = never, TStateMap ex
 			const propsChanged = instance.prevOwnProps !== ownProps;
 			const storeChanged = instance.prevStore !== store;
 
-			// update mapped props
-			let nextProps: {} = Object.assign({}, ownProps);
+			// update mapped props accordingly
+			const nextProps: {} = Object.assign({}, ownProps);
 			instance.updateStateMapping(nextProps, store, ownProps, stateChanged, propsChanged, storeChanged);
 			instance.updateDispatchMapping(nextProps, store, ownProps, stateChanged, propsChanged, storeChanged);
 
-			// drop the nextProps object if it equals to the previous
-			const mappedPropsChanged = propRefsEqual(instance.prevProps, nextProps);
-			if (mappedPropsChanged)
+			// only update final props when changes are detected
+			const finalPropsChanged = !propsShallowEqual(instance.finalProps, nextProps);
+			if (finalPropsChanged)
 			{
-				nextProps = instance.prevProps;
-			}
-			else
-			{
-				instance.prevProps = nextProps;
+				instance.finalProps = nextProps;
 			}
 
 			// update store context override
 			if (storeChanged)
 			{
-				instance.storeOverride = Object.assign({ stateChanged: instance.stateChanged }, store);
+				const clonedStore = Object.assign({}, store);
+
+				// replace the signal instance
+				clonedStore.stateChanged = instance.storeOverride.stateChanged;
+				instance.storeOverride = clonedStore;
 			}
 
 			// update the component output
-			if (mappedPropsChanged || storeChanged)
+			if (finalPropsChanged || storeChanged)
 			{
-				instance.jsx = h(
-					context.Provider,
-					{ value: instance.storeOverride } as never,
-					h(Component, nextProps as never));
+				instance.jsx = h(Component, instance.finalProps as never);
 			}
 
+			// act as a store provider
+			context.Provider.call(this, { value: instance.storeOverride } as never);
 			return instance.jsx;
 		};
 
-		Connected.displayName = `Connect(${Component.displayName || Component.name || ''})`;
+		Connected.displayName = `connect(${Component.displayName || Component.name || ''})`;
 		return Connected as FunctionalComponent<unknown>;
 	};
 };
