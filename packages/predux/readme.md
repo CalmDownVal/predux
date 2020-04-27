@@ -14,26 +14,40 @@ enforce a consistent way of doing things.
 | listeners are notified after each dispatch | state tested for changes, updates are batched |
 | thunk actions are an optional middleware | thunk actions are supported out of the box |
 
-## Actions, Action Creators and Reducers
+## Slice Actions and Reducers
 
-With Predux one only writes the reducer for an action; Its creator is derived
-from the reducer's signature automatically.
+A slice is a part of the store logically separated by its responsibility. For
+example a store of a blog might have slices: articles, comments, users. Slices
+can be dependent on one another (e.g. articles and comments reference to a user
+who authored them), but must not affect data in foreign slices (e.g. an action
+of the comments slice must not modify users).
+
+With Predux you only write the reducers for a slice's action; Its creator is
+derived from the reducer's signature automatically.
 
 ```ts
-import { createReducer } from '@calmdownval/predux';
-import { IAppState } from '../types';
+import { createSlice } from '@calmdownval/predux';
+import { UsersState } from './types';
 
-export const [ itemSelectedReducer, itemSelected ] = createReducer(
-  'ITEM_SELECTED',
-  (state: IAppState, itemId: number) => ({
+const initialState: UsersState = {
+  index: {},
+  ids: [],
+  currentUser: null
+};
+
+export const slice = createSlice();
+
+export const setCurrentUser = slice.createAction(
+  'SET_CURRENT_USER',
+  (state: UsersState, userId: number) => ({
     ...state,
-    selectedItems: [ ...state.selectedItems, itemId ]
+    currentUser: userId
   })
 );
 ```
 
 Action type is *always* a string provided as the first argument of
-`createReducer`. It is good to name your actions for debugging purposes, but can
+`createAction`. It is good to name your actions for debugging purposes, but can
 be omitted. In such case the actions will be named capital A and an index, e.g.
 `A1`, `A2`, `A3`.
 
@@ -41,92 +55,54 @@ The first argument of a reducer is always the state object. You can then
 add any number of custom arguments with data you need for the state change.
 
 Predux actions are arrays where the first item is the action type string
-followed by custom arguments of the reducer. Continuing the above example the
-generated action creator has the signature:  
-`itemSelected(itemId: number): [ "ITEM_SELECTED", number ]`
+followed by arguments of the reducer. Continuing the above example the generated
+action creator has the signature:  
+`setCurrentUser(userId: number): [ "SET_CURRENT_USER", number ]`
 
-> It is recommended to have each reducer in a separate file.
+## Combining Slices and Creating the Store
 
-## Creating the Store
+To have multiple slices live alongside one another, use the `combineSlices`
+function. It will create a new slice operating on a parent state generated from
+the map of slices you passed as argument.
 
-Predux knows which action a reducer is prepared to handle. To create a store it
-is enough to pass an array of reducers alongside the initial state object.
-
-```ts
-import { createStore } from '@calmdownval/predux';
-import { itemSelectedReducer } from './actions/itemSelected';
-import { IAppState } from './types';
-
-const initialState: IAppState = {
-  selectedItems: []
-};
-
-export const store = createStore(initialState, [
-  itemSelectedReducer
-  // ...more reducers
-]);
-```
-
-## Sub-States and Reducer Grouping
-
-In complex applications you may want to split your state into multiple
-sub-states: Objects nested under the top-level state each acting independently
-as a separate state with its well-defined responsibility.
-
-For this use case Predux provides the utility function `groupReducers`. The
-first argument specifies the key under which the sub-state will reside within
-the parent state. The second argument is an array of reducers associated with
-the sub-state.
-
-Keep in mind action types still have to be globally unique. In case two
-sub-states would each define an action with the same type string an error will
-be thrown upon calling `createStore`.
+Keep in mind action types still have to be globally unique. In case two slices
+each define an action with the same type string an error will be thrown upon
+calling `createStore`.
 
 While this is a great way to add structure to your state, you should still try
 to keep your state as shallow as possible. This will help promote both good
 developer experience as well as performance of your application.
 
+To create a store you only need to pass a slice to the `createStore` function.
+
 ```ts
-import { createStore, groupReducers } from '@calmdownval/predux';
-import { userLoggedInReducer } from './user/loggedIn';
-import { userLoggedOutReducer } from './user/loggedOut';
-import { entryAddedReducer } from './entries/added';
-import { entryRemovedReducer } from './entries/removed';
-import { IAppState } from './types';
+import { combineSlices, createStore } from '@calmdownval/predux';
+import { slice as articles } from './articles';
+import { slice as comments } from './comments';
+import { slice as users } from './users';
 
-const userReducers = groupReducers('user', [
-  userLoggedInReducer,
-  userLoggedOutReducer
-]);
+const slice = combineSlices({
+  articles,
+  comments,
+  users
+});
 
-const entriesReducers = groupReducers('entries', [
-  entryAddedReducer,
-  entryRemovedReducer
-]);
-
-const initialState: IAppState = {
-  user: {},
-  entries: {}
-};
-
-export const store = createStore(initialState, [
-  userReducers,
-  entriesReducers
-]);
+export const store = createStore(slice);
 ```
 
-## Composite Actions
+## Composite/Thunk Actions
 
 In most applications you will need composite actions which dispatch one or more
 simple actions during their execution. This is especially handy with
 asynchronous operations such as HTTP requests.
 
-A composite action creator returns a function. When dispatched, this function is
+A thunk action creator returns a function. When dispatched, this new function is
 invoked and passed two arguments:
 
 - `dispatch` a function which allows you to dispatch any number of actions to
 the store whenever you need to.
-- `getState` also a function which returns the current state object.
+- `getState` a function which returns the current state object at the time of
+calling.
 
 ```ts
 import { Dispatch } from '@calmdownval/predux';
@@ -156,25 +132,39 @@ export const refreshCounters = (url: string) =>
 
 ## State Change Notifications
 
-The store provides a `stateChanged` signal to which you can subscribe via the
-exported `Signal` utility:
+The store provides the `dispatchCompleted` and `stateChanged` signals to which
+you can subscribe via the exported `Signal` utility.
 
 ```ts
 import { Signal } from '@calmdownval/predux';
 import { store } from '~/store';
+
+const onDispatchCompleted = () => {
+  // ...
+};
 
 const onStateChanged = () => {
   // ...
 };
 
 // subscribe
+Signal.on(store.dispatchCompleted, onDispatchCompleted);
 Signal.on(store.stateChanged, onStateChanged);
 
 // unsubscribe
+Signal.off(store.dispatchCompleted, onDispatchCompleted);
 Signal.off(store.stateChanged, onStateChanged);
 ```
 
-These notifications are batched using `requestAnimationFrame` when available or
-`setTimeout` with zero delay otherwise. If you wish to avoid the batching
-mechanism, the `dispatch` method provides a second, optional argument which when
-set to true will cause listeners to be notified immediately.
+The `dispatchCompleted` signal is notified every time a dispatch compeltes
+regardless of whether the state changed or not.
+
+Notifications to `stateChanged` are only sent when state actually changes and
+are batched using `requestAnimationFrame` when available or `setTimeout` with
+zero delay otherwise. If you wish to avoid the batching mechanism for a
+particular action, the `dispatch` method provides a second (optional) argument
+'forceImmediate' which when set to true will cause listeners to be notified
+immediately.
+
+Even when batching is active, state changes are performed immediately upon
+dispatching an action. It is always only the notification that is postponed.

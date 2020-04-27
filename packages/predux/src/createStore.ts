@@ -1,60 +1,41 @@
 import * as Signal from './signal';
-import type { Action, Reducer, ReducerGroup, Store, Thunk } from './types';
+import type { Action, Reducer, Slice, Store, Thunk } from './types';
 
 const [ scheduleFrame, cancelFrame ] =
 	typeof requestAnimationFrame === 'function' && typeof cancelAnimationFrame === 'function'
 		? [ requestAnimationFrame, cancelAnimationFrame ] as const
 		: [ setTimeout, clearTimeout ] as const;
 
-export function createStore<TState = {}, TAction extends Action = Action>(initialState: TState, reducers: ReducerGroup<TState>): Store<TState, TAction>
+export function createStore<TState = {}, TAction extends Action = Action>(slice: Slice<TState>): Store<TState, TAction>
 {
-	let blockDispatch = false;
 	let frameId = 0;
-	let lastState: TState | null = null;
-	let state = initialState;
+	let isDispatching = false;
+	let state = slice.initialState;
 
-	const reducerMap: { [key: string]: Reducer<TState> | undefined } = {};
-	for (const groups = [ reducers ]; groups.length !== 0; )
+	const reducerMap = slice.reducers.reduce<{ [key: string]: Reducer<TState> | undefined }>((map, reducer) =>
 	{
-		const group = groups.pop()!;
-		for (const item of group)
+		if (reducerMap[reducer.type] !== undefined)
 		{
-			if (Array.isArray(item))
-			{
-				groups.push(item);
-				continue;
-			}
-
-			if (reducerMap[item.type] !== undefined)
-			{
-				throw new Error('cannot register multiple reducers for the same action');
-			}
-
-			reducerMap[item.type] = item;
+			throw new Error('cannot register multiple reducers for the same action');
 		}
-	}
 
+		map[reducer.type] = reducer;
+		return map;
+	}, {});
+
+	const dispatchCompleted = Signal.create();
 	const stateChanged = Signal.create();
-	const notifyListeners = () =>
+
+	const batchNotify = () =>
 	{
-		try
-		{
-			if (lastState !== state)
-			{
-				stateChanged();
-			}
-		}
-		finally
-		{
-			lastState = null;
-			frameId = 0;
-		}
+		frameId = 0;
+		stateChanged();
 	};
 
 	const getState = () => state;
 	const dispatch = (action: TAction | Thunk<any, TState, TAction>, forceImmediate?: boolean) =>
 	{
-		if (blockDispatch)
+		if (isDispatching)
 		{
 			throw new Error('cannot dispatch from a reducer');
 		}
@@ -64,42 +45,68 @@ export function createStore<TState = {}, TAction extends Action = Action>(initia
 			return action(dispatch, getState);
 		}
 
+		// remember state before reduction
+		const oldState = state;
+
+		// reducer is user code and may throw
 		try
 		{
 			const reducer = reducerMap[action[0]];
-			if (reducer)
+			if (!reducer)
 			{
-				blockDispatch = true;
-				if (lastState === null)
-				{
-					lastState = state;
-				}
-
-				const args = action.slice() as [ TState, ...unknown[] ];
-				args[0] = state;
-
-				state = reducer.apply(null, args);
-				if (forceImmediate === true)
-				{
-					if (frameId !== 0)
-					{
-						cancelFrame(frameId);
-					}
-
-					blockDispatch = false;
-					notifyListeners();
-				}
-				else if (frameId === 0)
-				{
-					frameId = scheduleFrame(notifyListeners);
-				}
+				return;
 			}
+
+			// we make sure no dispatches happen during the reduce call
+			isDispatching = true;
+
+			// build the args
+			const args = action.slice() as [ TState, ...unknown[] ];
+			args[0] = state;
+
+			// call user code
+			state = reducer.apply(null, args);
 		}
 		finally
 		{
-			blockDispatch = false;
+			// even if reducer threw, this flag must be unset properly
+			isDispatching = false;
+		}
+
+		// if we're here it means reducer completed successfully
+		// now we notify our listeners
+		try
+		{
+			// event handlers may throw
+			dispatchCompleted();
+		}
+		finally
+		{
+			// did the state even change?
+			if (state === oldState)
+			{
+				return;
+			}
+
+			// users may request an immediate notification
+			if (forceImmediate === true)
+			{
+				// first cancel any scheduled notifications
+				if (frameId !== 0)
+				{
+					cancelFrame(frameId);
+				}
+
+				// now force a notification
+				batchNotify();
+			}
+			else if (frameId === 0)
+			{
+				// we schedule a notification if not already pending
+				frameId = scheduleFrame(batchNotify);
+			}
 		}
 	};
 
-	return { dispatch, getState, stateChanged };
+	return { dispatch, dispatchCompleted, getState, stateChanged };
 }

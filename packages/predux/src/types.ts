@@ -5,7 +5,13 @@ export type Action<TArgs extends unknown[] = any, TKey extends string = string> 
 
 export interface ActionCreator<TState = {}, TAction extends Action = Action>
 {
-	(...args: never): TAction | Thunk<never, TState, TAction>;
+	(...args: unknown[]): TAction | Thunk<unknown, TState, TAction>;
+}
+
+export interface BaseActionCreator<TArgs extends unknown[], TKey extends string = string>
+{
+	(...args: TArgs): Action<TArgs, TKey>;
+	readonly type: TKey;
 }
 
 export interface Dispatch<TState = {}, TAction extends Action = Action>
@@ -22,11 +28,16 @@ export interface Reducer<TState = {}, TArgs extends unknown[] = any, TKey extend
 	readonly type: TKey;
 }
 
-export type ReducerGroup<TState> = (Reducer<TState> | ReducerGroup<TState>)[];
+export interface Slice<TState = {}>
+{
+	initialState: TState;
+	reducers: Reducer<TState>[];
+}
 
 export interface Store<TState = any, TAction extends Action = Action>
 {
 	dispatch: Dispatch<TState, TAction>;
+	dispatchCompleted: Signal;
 	getState: () => TState;
 	stateChanged: Signal;
 }

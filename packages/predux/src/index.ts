@@ -1,12 +1,14 @@
-export { createReducer } from './createReducer';
+export { combineSlices } from './combineSlices';
+export { createSlice } from './createSlice';
 export { createStore } from './createStore';
-export { groupReducers } from './groupReducers';
 export * as Signal from './signal';
 export type {
 	Action,
 	ActionCreator,
+	BaseActionCreator,
 	Dispatch,
 	Reducer,
+	Slice,
 	Store,
 	Thunk
 } from './types';
