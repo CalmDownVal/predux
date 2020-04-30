@@ -10,6 +10,9 @@ import { propsShallowEqual } from './propsShallowEqual';
 type ConnectHOC<TConnectedProps = {}> =
 	<TProps>(Component: ComponentType<TProps>) => FunctionalComponent<Omit<TProps, keyof TConnectedProps>>;
 
+type Mutable<T> =
+	{ -readonly [K in keyof T]: T[K] };
+
 interface Connect
 {
 	<TStateMap extends StateMap, TDispatchMap extends DispatchMap>(
@@ -36,7 +39,7 @@ export const connect: Connect = <TState = never, TOwnProps = never, TStateMap ex
 			prevStore: null,
 			prevX: -1,
 
-			storeOverride: { stateChanged: Signal.create() } as Store,
+			storeOverride: { stateChanged: Signal.create() } as Mutable<Store>,
 			updateDispatchMapping: initDispatchMap<TState, TOwnProps>(dispatchMap),
 			updateStateMapping: initStateMap(stateMap)
 		});
@@ -89,7 +92,7 @@ export const connect: Connect = <TState = never, TOwnProps = never, TStateMap ex
 			// update store context override
 			if (storeChanged)
 			{
-				const clonedStore = Object.assign({}, store);
+				const clonedStore: Mutable<Store> = Object.assign({}, store);
 
 				// replace the signal instance
 				clonedStore.stateChanged = instance.storeOverride.stateChanged;

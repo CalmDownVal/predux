@@ -13,7 +13,7 @@ interface CreateAction<TState>
 
 interface ActiveSlice<TState = {}> extends Slice<TState>
 {
-	createAction: CreateAction<TState>;
+	readonly createAction: CreateAction<TState>;
 }
 
 let indexer = 0;
@@ -48,5 +48,10 @@ export function createSlice<TState>(initialState: TState): ActiveSlice<TState>
 		return actionCreator;
 	};
 
-	return { createAction, initialState, reducers };
+	return { _isSlice: true, createAction, initialState, reducers };
+}
+
+export function isSlice(obj: unknown): obj is Slice
+{
+	return typeof obj === 'object' && obj !== null && (obj as Slice)._isSlice === true;
 }

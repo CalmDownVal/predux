@@ -1,13 +1,14 @@
 import type { Reducer, Slice } from './types';
 
-type SliceMap = { [K: string]: Slice<any> };
+export type SliceMap = { [K: string]: Slice<any> };
+export type ParentState<T extends SliceMap> = { [K in keyof T]: T[K] extends Slice<infer S> ? S : never };
 
 export function combineSlices<T extends SliceMap>(map: T)
 {
-	type ParentState = { [K in keyof T]: T[K] extends Slice<infer S> ? S : never };
+	type TState = ParentState<T>
 
-	const initialState = {} as ParentState;
-	const reducers: Reducer<ParentState>[] = [];
+	const initialState = {} as TState;
+	const reducers: Reducer<TState>[] = [];
 
 	for (const name in map)
 	{
@@ -17,11 +18,11 @@ export function combineSlices<T extends SliceMap>(map: T)
 		for (let reducerIndex = 0; reducerIndex < slice.reducers.length; ++reducerIndex)
 		{
 			const subReducer = slice.reducers[reducerIndex];
-			const reducer = function (state: ParentState)
+			const reducer = function (state: TState)
 			{
 				const oldSubState = state[name];
 				const length = arguments.length;
-				const args = new Array(length) as [ ParentState[typeof name], ...unknown[] ];
+				const args = new Array(length) as [ TState[typeof name], ...unknown[] ];
 
 				args[0] = oldSubState;
 				for (let argIndex = 1; argIndex < length; ++argIndex)
@@ -38,12 +39,12 @@ export function combineSlices<T extends SliceMap>(map: T)
 				const newState = Object.assign({}, state);
 				newState[name] = newSubState;
 				return newState;
-			} as { (): ParentState; type: string };
+			} as { (): TState; type: string };
 
 			reducer.type = subReducer.type;
 			reducers.push(reducer);
 		}
 	}
 
-	return { initialState, reducers } as Slice<ParentState>;
+	return { _isSlice: true, initialState, reducers } as Slice<TState>;
 }

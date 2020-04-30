@@ -81,13 +81,36 @@ import { slice as articles } from './articles';
 import { slice as comments } from './comments';
 import { slice as users } from './users';
 
-const slice = combineSlices({
+const mainSlice = combineSlices({
   articles,
   comments,
   users
 });
 
-export const store = createStore(slice);
+export const store = createStore(mainSlice);
+```
+
+The `createStore` function can also accept a slice map. In such case it will
+call `combineSlices` for you. The below example creates an identical store:
+
+```ts
+import { createStore } from '@calmdownval/predux';
+import { slice as articles } from './articles';
+import { slice as comments } from './comments';
+import { slice as users } from './users';
+
+export const store = createStore({
+  articles,
+  comments,
+  users
+});
+```
+
+Since the state is inferred automatically you don't have access to its type. To
+get the state type, use the utility type `StateOf<T>`:
+
+```ts
+export type AppState = StateOf<typeof store>;
 ```
 
 ## Composite/Thunk Actions

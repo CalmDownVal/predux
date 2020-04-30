@@ -1,4 +1,4 @@
-import type { ActionCreator, Store } from '@calmdownval/predux';
+import type { ActionCreator, Store, Thunk } from '@calmdownval/predux';
 
 import type { AnyProps } from './propsShallowEqual';
 
@@ -19,7 +19,7 @@ type WithReturnType<TFunc, TReturn> =
 
 type ResolveThunks<T> =
 	T extends DispatchMapObject<never>
-		? { [K in keyof T]: WithReturnType<T[K], ReturnType<T[K]> extends (...args: unknown[]) => infer R ? R : void> }
+		? { [K in keyof T]: WithReturnType<T[K], ReturnType<T[K]> extends Thunk<infer R> ? R : void> }
 		: {};
 
 export type InferDispatchPropTypes<T extends DispatchMap> =
@@ -27,7 +27,7 @@ export type InferDispatchPropTypes<T extends DispatchMap> =
 
 interface Proxy<TState>
 {
-	readonly endpoint: (...args: unknown[]) => void | Promise<void>;
+	readonly endpoint: (...args: unknown[]) => unknown;
 	action?: ActionCreator<TState>;
 }
 

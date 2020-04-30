@@ -3,23 +3,23 @@ import type { Signal } from './signal';
 export type Action<TArgs extends unknown[] = any, TKey extends string = string> =
 	((type: TKey, ...args: TArgs) => unknown) extends (...args: infer U) => unknown ? Readonly<U> : never;
 
-export interface ActionCreator<TState = {}, TAction extends Action = Action>
+export interface ActionCreator<TState = {}, TArgs extends unknown[] = any, TResult = unknown>
 {
-	(...args: unknown[]): TAction | Thunk<unknown, TState, TAction>;
+	(...args: TArgs): Action | Thunk<TResult, TState>;
 }
 
-export interface BaseActionCreator<TArgs extends unknown[], TKey extends string = string>
+export interface BaseActionCreator<TArgs extends unknown[] = any, TKey extends string = string>
 {
 	(...args: TArgs): Action<TArgs, TKey>;
 	readonly type: TKey;
 }
 
-export interface Dispatch<TState = {}, TAction extends Action = Action>
+export interface Dispatch<TState = {}>
 {
-	<T extends TAction | Thunk<never, TState, TAction>>(
+	<T extends Action | Thunk<any, TState>>(
 		action: T,
 		forceImmediate?: boolean
-	): T extends Thunk<infer R, TState, TAction> ? R : void;
+	): T extends Thunk<infer R, TState> ? R : void;
 }
 
 export interface Reducer<TState = {}, TArgs extends unknown[] = any, TKey extends string = string>
@@ -30,19 +30,22 @@ export interface Reducer<TState = {}, TArgs extends unknown[] = any, TKey extend
 
 export interface Slice<TState = {}>
 {
-	initialState: TState;
-	reducers: Reducer<TState>[];
+	readonly _isSlice: true;
+	readonly initialState: TState;
+	readonly reducers: Reducer<TState>[];
 }
 
-export interface Store<TState = any, TAction extends Action = Action>
+export interface Store<TState = any>
 {
-	dispatch: Dispatch<TState, TAction>;
-	dispatchCompleted: Signal;
-	getState: () => TState;
-	stateChanged: Signal;
+	readonly dispatch: Dispatch<TState>;
+	readonly dispatchCompleted: Signal;
+	readonly getState: () => TState;
+	readonly stateChanged: Signal;
 }
 
-export interface Thunk<TResult, TState = {}, TAction extends Action = Action>
+export type StateOf<T extends Store> = T extends Store<infer S> ? S : unknown
+
+export interface Thunk<TResult, TState = {}>
 {
-	(dispatch: Dispatch<TState, TAction>, getState: () => TState): TResult;
+	(dispatch: Dispatch<TState>, getState: () => TState): TResult;
 }

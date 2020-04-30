@@ -9,6 +9,7 @@ export type {
 	Dispatch,
 	Reducer,
 	Slice,
+	StateOf,
 	Store,
 	Thunk
 } from './types';

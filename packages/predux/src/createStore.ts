@@ -1,4 +1,6 @@
-import * as Signal from './signal';
+import { combineSlices, ParentState, SliceMap } from './combineSlices';
+import { isSlice } from './createSlice';
+import { create } from './signal';
 import type { Action, Reducer, Slice, Store, Thunk } from './types';
 
 const [ scheduleFrame, cancelFrame ] =
@@ -6,13 +8,18 @@ const [ scheduleFrame, cancelFrame ] =
 		? [ requestAnimationFrame, cancelAnimationFrame ] as const
 		: [ setTimeout, clearTimeout ] as const;
 
-export function createStore<TState = {}, TAction extends Action = Action>(slice: Slice<TState>): Store<TState, TAction>
+interface CreateStore
 {
-	let frameId = 0;
-	let isDispatching = false;
-	let state = slice.initialState;
+	<T>(slice: Slice<T>): Store<T>;
+	<T extends SliceMap>(sliceMap: T): Store<ParentState<T>>;
+}
 
-	const reducerMap = slice.reducers.reduce<{ [key: string]: Reducer<TState> | undefined }>((map, reducer) =>
+export const createStore: CreateStore = (sliceOrMap: {}) =>
+{
+	const slice = isSlice(sliceOrMap) ? sliceOrMap : combineSlices(sliceOrMap);
+	const dispatchCompleted = create();
+	const stateChanged = create();
+	const reducerMap = slice.reducers.reduce<{ [key: string]: Reducer | undefined }>((map, reducer) =>
 	{
 		if (reducerMap[reducer.type] !== undefined)
 		{
@@ -23,8 +30,9 @@ export function createStore<TState = {}, TAction extends Action = Action>(slice:
 		return map;
 	}, {});
 
-	const dispatchCompleted = Signal.create();
-	const stateChanged = Signal.create();
+	let frameId = 0;
+	let isDispatching = false;
+	let state = slice.initialState;
 
 	const batchNotify = () =>
 	{
@@ -33,7 +41,7 @@ export function createStore<TState = {}, TAction extends Action = Action>(slice:
 	};
 
 	const getState = () => state;
-	const dispatch = (action: TAction | Thunk<any, TState, TAction>, forceImmediate?: boolean) =>
+	const dispatch = (action: Action | Thunk<any>, forceImmediate?: boolean) =>
 	{
 		if (isDispatching)
 		{
@@ -61,7 +69,7 @@ export function createStore<TState = {}, TAction extends Action = Action>(slice:
 			isDispatching = true;
 
 			// build the args
-			const args = action.slice() as [ TState, ...unknown[] ];
+			const args = action.slice() as [ {}, ...unknown[] ];
 			args[0] = state;
 
 			// call user code
@@ -109,4 +117,4 @@ export function createStore<TState = {}, TAction extends Action = Action>(slice:
 	};
 
 	return { dispatch, dispatchCompleted, getState, stateChanged };
-}
+};
