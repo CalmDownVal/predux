@@ -3,12 +3,12 @@ import type { Store } from '@calmdownval/predux';
 import type { AnyProps } from './propsShallowEqual';
 import { isFactory, isUsingProps, Selector } from './selectors';
 
-export interface StateMap<TState = never, TOwnProps = never>
+export interface StateMap<TState = any, TOwnProps = any>
 {
 	[key: string]: Selector<TState, TOwnProps, any>;
 }
 
-export type InferStatePropTypes<T extends StateMap<never, never>> =
+export type InferStatePropTypes<T extends StateMap> =
 	{ [K in keyof T]: ReturnType<T[K]> };
 
 export function initStateMap<TState, TOwnProps>(map?: StateMap<TState, TOwnProps>)

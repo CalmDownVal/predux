@@ -21,7 +21,7 @@ export const createStore: CreateStore = (sliceOrMap: {}) =>
 	const stateChanged = create();
 	const reducerMap = slice.reducers.reduce<{ [key: string]: Reducer | undefined }>((map, reducer) =>
 	{
-		if (reducerMap[reducer.type] !== undefined)
+		if (map[reducer.type] !== undefined)
 		{
 			throw new Error('cannot register multiple reducers for the same action');
 		}

@@ -26,7 +26,7 @@ function incrementReducer(updateCount: number): number
 	return updateCount + 1;
 }
 
-export const connect: Connect = <TState = never, TOwnProps = never, TStateMap extends StateMap<TState, TOwnProps> = {}, TDispatchMap extends DispatchMap<TState, TOwnProps> = {}>(
+export const connect: Connect = <TState = {}, TOwnProps = {}, TStateMap extends StateMap<TState, TOwnProps> = {}, TDispatchMap extends DispatchMap<TState, TOwnProps> = {}>(
 	stateMap?: TStateMap,
 	dispatchMap?: TDispatchMap) =>
 {
@@ -102,11 +102,12 @@ export const connect: Connect = <TState = never, TOwnProps = never, TStateMap ex
 			// update the component output
 			if (finalPropsChanged || storeChanged)
 			{
-				instance.jsx = h(Component, instance.finalProps as never);
+				instance.jsx = h(
+					context.Provider,
+					{ value: instance.storeOverride } as never,
+					h(Component, instance.finalProps as never));
 			}
 
-			// act as a store provider
-			context.Provider.call(this, { value: instance.storeOverride } as never);
 			return instance.jsx;
 		};
 

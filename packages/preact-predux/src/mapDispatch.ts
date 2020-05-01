@@ -7,7 +7,7 @@ interface DispatchMapObject<TState>
 	[key: string]: ActionCreator<TState>;
 }
 
-export type DispatchMap<TState = never, TOwnProps = never> =
+export type DispatchMap<TState = any, TOwnProps = any> =
 	| DispatchMapObject<TState>
 	| ((props?: TOwnProps) => DispatchMapObject<TState>);
 
@@ -18,7 +18,7 @@ type WithReturnType<TFunc, TReturn> =
 	(...args: ArgumentsOf<TFunc>) => TReturn;
 
 type ResolveThunks<T> =
-	T extends DispatchMapObject<never>
+	T extends DispatchMapObject<any>
 		? { [K in keyof T]: WithReturnType<T[K], ReturnType<T[K]> extends Thunk<infer R> ? R : void> }
 		: {};
 
