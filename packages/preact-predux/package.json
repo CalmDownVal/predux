@@ -5,14 +5,15 @@
 	"main": "dist/index.js",
 	"types": "dist/index.d.ts",
 	"type": "module",
+	"dependencies": {
+		"@calmdownval/signal": "0.1.x"
+	},
 	"peerDependencies": {
 		"@calmdownval/predux": ">=0.1.2",
 		"preact": "10.x.x"
 	},
 	"devDependencies": {
-		"@calmdownval/predux": ">=0.1.2",
-		"preact": "10.x.x",
-		"typescript": "3.8.x"
+		"preact": "10.x.x"
 	},
 	"scripts": {
 		"build": "rm -rf dist/* && tsc",

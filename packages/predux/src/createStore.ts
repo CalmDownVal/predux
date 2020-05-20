@@ -1,6 +1,7 @@
+import { create } from '@calmdownval/signal';
+
 import { combineSlices, ParentState, SliceMap } from './combineSlices';
 import { isSlice } from './createSlice';
-import { create } from './signal';
 import type { Action, Reducer, Slice, Store, Thunk } from './types';
 
 const [ scheduleFrame, cancelFrame ] =

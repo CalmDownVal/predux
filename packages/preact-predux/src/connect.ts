@@ -1,4 +1,5 @@
-import { Signal, Store } from '@calmdownval/predux';
+import { Store } from '@calmdownval/predux';
+import * as Signal from '@calmdownval/signal';
 import { Component as ClassComponent, ComponentType, FunctionalComponent, h, VNode } from 'preact';
 import { useContext, useLayoutEffect, useMemo, useReducer } from 'preact/hooks';
 

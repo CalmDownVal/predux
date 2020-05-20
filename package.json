@@ -9,6 +9,7 @@
 		"@typescript-eslint/parser": ">=2.24.x",
 		"eslint": "6.x.x",
 		"eslint-import-resolver-typescript": "2.x.x",
-		"eslint-plugin-import": "2.x.x"
+		"eslint-plugin-import": "2.x.x",
+		"typescript": "3.9.x"
 	}
 }
