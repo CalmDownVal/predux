@@ -5,15 +5,15 @@ import { isFactory, isUsingProps, Selector } from './selectors';
 
 export interface StateMap<TState = any, TOwnProps = any>
 {
-	[key: string]: Selector<TState, TOwnProps, any>;
+	[key: string]: Selector<any, TState, TOwnProps>;
 }
 
 export type InferStatePropTypes<T extends StateMap> =
-	{ [K in keyof T]: ReturnType<T[K]> };
+	{ [K in keyof T]: T[K] extends Selector<infer R, any, any> ? R : never };
 
 export function initStateMap<TState, TOwnProps>(map?: StateMap<TState, TOwnProps>)
 {
-	const selectors: (string | Selector<TState, TOwnProps, unknown>)[] = [];
+	const selectors: (string | Selector<unknown, TState, TOwnProps>)[] = [];
 	let usesPropsUntil = 0;
 
 	for (const key in map)
