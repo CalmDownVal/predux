@@ -12,7 +12,7 @@ export type DispatchMap<TState = any, TOwnProps = any> =
 	| ((props?: TOwnProps) => DispatchMapObject<TState>);
 
 type ArgumentsOf<TFunc> =
-	TFunc extends (...args: infer TArgs) => unknown ? TArgs : never;
+	TFunc extends (...args: infer TArgs) => any ? TArgs : never;
 
 type WithReturnType<TFunc, TReturn> =
 	(...args: ArgumentsOf<TFunc>) => TReturn;
@@ -23,11 +23,11 @@ type ResolveThunks<T> =
 		: {};
 
 export type InferDispatchPropTypes<T extends DispatchMap> =
-	ResolveThunks<T extends (...args: unknown[]) => unknown ? ReturnType<T> : T>;
+	ResolveThunks<T extends (...args: any[]) => any ? ReturnType<T> : T>;
 
 interface Proxy<TState>
 {
-	readonly endpoint: (...args: unknown[]) => unknown;
+	readonly endpoint: (...args: any[]) => any;
 	action?: ActionCreator<TState>;
 }
 

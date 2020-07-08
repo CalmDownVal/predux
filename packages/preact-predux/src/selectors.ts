@@ -91,7 +91,7 @@ interface CallSelector
 
 interface Attrs
 {
-	fn: (...args: unknown[]) => unknown;
+	fn: (...args: any) => any;
 	needsFactory: boolean;
 	needsProps: boolean;
 	selectors: Selector[];
@@ -104,7 +104,7 @@ function getAttributes(args: Selector[], willMemo: boolean)
 	let length = args.length - 1;
 
 	// get the implementation
-	const fn = args[length] as (...args: unknown[]) => unknown;
+	const fn = args[length] as (...args: any) => any;
 
 	// support passing an array of selectors as first arg
 	if (length === 1)
