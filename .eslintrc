@@ -73,12 +73,6 @@
 		"@typescript-eslint/no-inferrable-types": "off",
 		"@typescript-eslint/no-explicit-any": "off",
 		"@typescript-eslint/explicit-member-accessibility": "warn",
-		"@typescript-eslint/interface-name-prefix": [
-			"warn",
-			{
-				"prefixWithI": "never"
-			}
-		],
 		"indent": "off",
 		"@typescript-eslint/indent": [
 			"warn",

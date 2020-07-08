@@ -4,16 +4,16 @@
 	"license": "MIT",
 	"main": "dist/index.js",
 	"types": "dist/index.d.ts",
-	"type": "module",
+	"type": "commonjs",
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/CalmDownVal/predux.git"
 	},
 	"dependencies": {
-		"@calmdownval/signal": "0.1.x"
+		"@calmdownval/signal": "1.x.x"
 	},
 	"peerDependencies": {
-		"@calmdownval/predux": ">=0.1.2",
+		"@calmdownval/predux": ">=0.1.3",
 		"preact": "10.x.x"
 	},
 	"devDependencies": {
