@@ -47,5 +47,5 @@ export type StateOf<T extends Store> = T extends Store<infer S> ? S : unknown
 
 export interface Thunk<TResult, TState = {}>
 {
-	(dispatch: Dispatch<TState>, getState: () => TState): TResult;
+	(dispatch: Dispatch<TState>, getState: () => TState, store: Store<TState>): TResult;
 }

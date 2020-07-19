@@ -51,7 +51,7 @@ export const createStore: CreateStore = (sliceOrMap: {}) =>
 
 		if (typeof action === 'function')
 		{
-			return action(dispatch, getState);
+			return action(dispatch, getState, store);
 		}
 
 		// remember state before reduction
@@ -117,5 +117,6 @@ export const createStore: CreateStore = (sliceOrMap: {}) =>
 		}
 	};
 
-	return { dispatch, dispatchCompleted, getState, stateChanged };
+	const store = { dispatch, dispatchCompleted, getState, stateChanged };
+	return store;
 };

@@ -107,34 +107,36 @@ export const store = createStore({
 ```
 
 Since the state is inferred automatically you don't have access to its type. To
-get the state type, use the utility type `StateOf<T>`:
+get the resulting state type, use the utility type `StateOf<T>`:
 
 ```ts
-export type AppState = StateOf<typeof store>;
+export type RootState = StateOf<typeof store>;
 ```
 
-## Composite/Thunk Actions
+## Thunk Actions
 
 In most applications you will need composite actions which dispatch one or more
 simple actions during their execution. This is especially handy with
 asynchronous operations such as HTTP requests.
 
 A thunk action creator returns a function. When dispatched, this new function is
-invoked and passed two arguments:
+invoked and passed three arguments:
 
 - `dispatch` a function which allows you to dispatch any number of actions to
 the store whenever you need to.
 - `getState` a function which returns the current state object at the time of
 calling.
+- `store` a reference to the dispatching store.
 
 ```ts
-import { Dispatch } from '@calmdownval/predux';
-import { IAppState, CounterType } from '~/store/types';
+import type { Dispatch } from '@calmdownval/predux';
+import type { RootState } from '~/store';
 import { setCounter } from './setCounter';
 import { apiError } from './apiError';
+import type { CounterType } from './types';
 
 export const refreshCounters = (url: string) =>
-  async (dispatch: Dispatch, getState: () => IAppState) => {
+  async (dispatch: Dispatch, getState: () => RootState) => {
     try {
       // we can read the state
       const { user: { id } } = getState();
@@ -156,10 +158,10 @@ export const refreshCounters = (url: string) =>
 ## State Change Notifications
 
 The store provides the `dispatchCompleted` and `stateChanged` signals to which
-you can subscribe via the exported `Signal` utility.
+you can subscribe using the `@calmdownval/signal` package.
 
 ```ts
-import { Signal } from '@calmdownval/predux';
+import * as Signal from '@calmdownval/signal';
 import { store } from '~/store';
 
 const onDispatchCompleted = () => {
@@ -179,7 +181,7 @@ Signal.off(store.dispatchCompleted, onDispatchCompleted);
 Signal.off(store.stateChanged, onStateChanged);
 ```
 
-The `dispatchCompleted` signal is notified every time a dispatch compeltes
+The `dispatchCompleted` signal is notified every time a dispatch completes
 regardless of whether the state changed or not.
 
 Notifications to `stateChanged` are only sent when state actually changes and
@@ -191,3 +193,25 @@ immediately.
 
 Even when batching is active, state changes are performed immediately upon
 dispatching an action. It is always only the notification that is postponed.
+
+## State Awaiter Utility
+
+The awaiter utility constructs a promise using a simple boolean predicate which
+resolves once the predicate returns `true`. This is very useful when waiting for
+e.g. a modal window to receive user input.
+
+```ts
+import { Thunk, until } from '@calmdownval/predux';
+import type { RootState } from '~/store';
+import { showDialog } from '.';
+
+export const showMessage = (message: string): Thunk<Promise<void>, RootState> =>
+  (dispatch, _getState, store) => {
+    dispatch(showDialog(message));
+    return until(store, state => !state.dialog.isOpen);
+  };
+```
+
+After awaiting the `showMessage` thunk, the dialog is guaranteed to be already
+closed. This alone can significantly streamline UI interaction code within your
+business logic.
