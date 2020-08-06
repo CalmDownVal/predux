@@ -15,5 +15,8 @@
 	},
 	"dependencies": {
 		"@calmdownval/signal": ">=1.0.1"
+	},
+	"devDependencies": {
+		"typescript": "3.9.x"
 	}
 }

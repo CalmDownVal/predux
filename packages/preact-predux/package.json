@@ -21,6 +21,7 @@
 		"preact": "10.x.x"
 	},
 	"devDependencies": {
-		"preact": "10.x.x"
+		"preact": "10.x.x",
+		"typescript": "3.9.x"
 	}
 }

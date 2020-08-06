@@ -86,7 +86,7 @@
 		"brace-style": "off",
 		"@typescript-eslint/brace-style": [
 			"warn",
-			"allman"
+			"stroustrup"
 		],
 
 		// imports
