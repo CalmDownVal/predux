@@ -1,36 +1,30 @@
 import type { Store } from '@calmdownval/predux';
 
 import type { AnyProps } from './propsShallowEqual';
-import { isFactory, isUsingProps, Selector } from './selectors';
+import { InitializedSelector, isFactory, isUsingProps, selectInitialized, Selector } from './selectors';
 
-export interface StateMap<TState = any, TOwnProps = any>
-{
-	[key: string]: Selector<any, TState, TOwnProps>;
+export interface StateMap<TProps = any> {
+	[key: string]: Selector<any, TProps>;
 }
 
 export type InferStatePropTypes<T extends StateMap> =
-	{ [K in keyof T]: T[K] extends Selector<infer R, any, any> ? R : never };
+	{ [K in keyof T]: T[K] extends Selector<infer R, any> ? R : never };
 
-export function initStateMap<TState, TOwnProps>(map?: StateMap<TState, TOwnProps>)
-{
-	const selectors: (string | Selector<unknown, TState, TOwnProps>)[] = [];
+export function initStateMap<TProps>(map?: StateMap<TProps>) {
+	const selectors: (string | InitializedSelector<any, TProps>)[] = [];
 	let usesPropsUntil = 0;
 
-	for (const key in map)
-	{
-		let selector = map[key];
-		if (isFactory(selector))
-		{
+	for (const key in map) {
+		let selector = map[key] as InitializedSelector<any, TProps>;
+		if (isFactory(selector)) {
 			selector = selector();
 		}
 
-		if (isUsingProps(selector))
-		{
+		if (isUsingProps(selector)) {
 			selectors.unshift(key, selector);
 			usesPropsUntil += 2;
 		}
-		else
-		{
+		else {
 			selectors.push(key, selector);
 		}
 	}
@@ -38,14 +32,10 @@ export function initStateMap<TState, TOwnProps>(map?: StateMap<TState, TOwnProps
 	// eslint-disable-next-line no-param-reassign
 	map = undefined;
 
-	return (target: AnyProps, store: Store<TState>, props: TOwnProps, stateChanged: boolean, propsChanged: boolean, storeChanged: boolean) =>
-	{
+	return (target: AnyProps, store: Store, props: TProps, stateChanged: boolean, propsChanged: boolean, storeChanged: boolean) => {
 		const until = stateChanged || storeChanged ? selectors.length : propsChanged ? usesPropsUntil : 0;
-		const state = store.getState();
-
-		for (let i = 0; i < until; i += 2)
-		{
-			target[selectors[i] as string] = (selectors[i + 1] as Selector)(state, props);
+		for (let i = 0; i < until; i += 2) {
+			target[selectors[i] as string] = selectInitialized(selectors[i + 1] as InitializedSelector<any, TProps>, store.select, props);
 		}
 	};
 }

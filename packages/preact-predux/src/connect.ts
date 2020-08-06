@@ -1,57 +1,46 @@
 import { Store } from '@calmdownval/predux';
 import * as Signal from '@calmdownval/signal';
 import { Component as ClassComponent, ComponentType, FunctionalComponent, h, VNode } from 'preact';
-import { useContext, useLayoutEffect, useMemo, useReducer } from 'preact/hooks';
+import { useLayoutEffect, useMemo, useReducer } from 'preact/hooks';
 
-import { context } from './context';
+import { context, useStore } from './context';
 import { DispatchMap, InferDispatchPropTypes, initDispatchMap } from './mapDispatch';
 import { InferStatePropTypes, initStateMap, StateMap } from './mapState';
 import { propsShallowEqual } from './propsShallowEqual';
 
-type ConnectHOC<TConnectedProps = {}> =
+type ConnectHOC<TConnectedProps> =
 	<TProps>(Component: ComponentType<TProps>) => FunctionalComponent<Omit<TProps, keyof TConnectedProps>>;
 
-type Mutable<T> =
-	{ -readonly [K in keyof T]: T[K] };
+type MutableStore =
+	{ -readonly [K in keyof Store]: Store[K] };
 
-interface Connect
-{
-	<TStateMap extends StateMap, TDispatchMap extends DispatchMap>(
-		stateMap?: TStateMap,
-		dispatchMap?: TDispatchMap
-	): ConnectHOC<InferStatePropTypes<TStateMap> & InferDispatchPropTypes<TDispatchMap>>;
-}
-
-function incrementReducer(updateCount: number): number
-{
+function incrementReducer(updateCount: number): number {
 	return updateCount + 1;
 }
 
-export const connect: Connect = <TState = {}, TOwnProps = {}, TStateMap extends StateMap<TState, TOwnProps> = {}, TDispatchMap extends DispatchMap<TState, TOwnProps> = {}>(
+export function connect<TProps, TStateMap extends StateMap<TProps>, TDispatchMap extends DispatchMap<TProps>>(
 	stateMap?: TStateMap,
-	dispatchMap?: TDispatchMap) =>
-{
+	dispatchMap?: TDispatchMap
+): ConnectHOC<InferStatePropTypes<TStateMap> & InferDispatchPropTypes<TDispatchMap>> {
+
 	const initComponent = () =>
 		({
 			finalProps: {},
 			jsx: null as VNode | null,
 
-			prevOwnProps: null,
-			prevStore: null,
+			prevOwnProps: null as TProps | null,
+			prevStore: null as Store | null,
 			prevX: -1,
 
-			storeOverride: { stateChanged: Signal.create() } as Mutable<Store>,
-			updateDispatchMapping: initDispatchMap<TState, TOwnProps>(dispatchMap),
+			storeOverride: { stateChanged: Signal.create() } as MutableStore,
+			updateDispatchMapping: initDispatchMap<TProps>(dispatchMap),
 			updateStateMapping: initStateMap(stateMap)
 		});
 
-	return <T>(Component: ComponentType<T>) =>
-	{
-		const Connected = function (this: ClassComponent, ownProps: TOwnProps)
-		{
-			const store = useContext(context);
-			if (!store)
-			{
+	return <T>(Component: ComponentType<T>) => {
+		const Connected = function (this: ClassComponent, ownProps: TProps) {
+			const store = useStore();
+			if (!store) {
 				throw new Error('Store was not provided. Wrap your component tree in a store provider.');
 			}
 
@@ -62,10 +51,8 @@ export const connect: Connect = <TState = {}, TOwnProps = {}, TStateMap extends 
 			const [ x, forceUpdate ] = useReducer<number, void>(incrementReducer, 0);
 
 			// manage store subscription
-			useLayoutEffect(() =>
-			{
-				const onUpdate = () =>
-				{
+			useLayoutEffect(() => {
+				const onUpdate = () => {
 					forceUpdate();
 					instance.storeOverride.stateChanged();
 				};
@@ -78,6 +65,10 @@ export const connect: Connect = <TState = {}, TOwnProps = {}, TStateMap extends 
 			const propsChanged = instance.prevOwnProps !== ownProps;
 			const storeChanged = instance.prevStore !== store;
 
+			instance.prevX = x;
+			instance.prevOwnProps = ownProps;
+			instance.prevStore = store;
+
 			// update mapped props accordingly
 			const nextProps: {} = Object.assign({}, ownProps);
 			instance.updateStateMapping(nextProps, store, ownProps, stateChanged, propsChanged, storeChanged);
@@ -85,15 +76,13 @@ export const connect: Connect = <TState = {}, TOwnProps = {}, TStateMap extends 
 
 			// only update final props when changes are detected
 			const finalPropsChanged = !propsShallowEqual(instance.finalProps, nextProps);
-			if (finalPropsChanged)
-			{
+			if (finalPropsChanged) {
 				instance.finalProps = nextProps;
 			}
 
 			// update store context override
-			if (storeChanged)
-			{
-				const clonedStore: Mutable<Store> = Object.assign({}, store);
+			if (storeChanged) {
+				const clonedStore: MutableStore = Object.assign({}, store);
 
 				// replace the signal instance
 				clonedStore.stateChanged = instance.storeOverride.stateChanged;
@@ -101,8 +90,7 @@ export const connect: Connect = <TState = {}, TOwnProps = {}, TStateMap extends 
 			}
 
 			// update the component output
-			if (finalPropsChanged || storeChanged)
-			{
+			if (finalPropsChanged || storeChanged) {
 				instance.jsx = h(
 					context.Provider,
 					{ value: instance.storeOverride } as never,
@@ -113,40 +101,40 @@ export const connect: Connect = <TState = {}, TOwnProps = {}, TStateMap extends 
 		};
 
 		Connected.displayName = `connect(${Component.displayName || Component.name || ''})`;
-		return Connected as FunctionalComponent<unknown>;
+		return Connected as FunctionalComponent;
 	};
-};
+}
 
 type ConnectedProps<
-	TOwnProps,
+	TProps,
 	TStateMap extends StateMap,
 	TDispatchMap extends DispatchMap> =
-		& TOwnProps
+		& TProps
 		& InferStatePropTypes<TStateMap>
 		& InferDispatchPropTypes<TDispatchMap>;
 
 export type UnconnectedFunctionalComponent<
-	TOwnProps = {},
+	TProps = {},
 	TStateMap extends StateMap = {},
 	TDispatchMap extends DispatchMap = {}>
-	= FunctionalComponent<ConnectedProps<TOwnProps, TStateMap, TDispatchMap>>;
+	= FunctionalComponent<ConnectedProps<TProps, TStateMap, TDispatchMap>>;
 
 export type UFC<
-	TOwnProps = {},
+	TProps = {},
 	TStateMap extends StateMap = {},
 	TDispatchMap extends DispatchMap = {}>
-	= UnconnectedFunctionalComponent<TOwnProps, TStateMap, TDispatchMap>;
+	= UnconnectedFunctionalComponent<TProps, TStateMap, TDispatchMap>;
 
 export type UnconnectedComponent<
-	TOwnProps = {},
+	TProps = {},
 	TOwnContext = {},
 	TStateMap extends StateMap = {},
 	TDispatchMap extends DispatchMap = {}>
-	= ClassComponent<ConnectedProps<TOwnProps, TStateMap, TDispatchMap>, TOwnContext>;
+	= ClassComponent<ConnectedProps<TProps, TStateMap, TDispatchMap>, TOwnContext>;
 
 export type UC<
-	TOwnProps = {},
+	TProps = {},
 	TOwnContext = {},
 	TStateMap extends StateMap = {},
 	TDispatchMap extends DispatchMap = {}>
-	= UnconnectedComponent<TOwnProps, TOwnContext, TStateMap, TDispatchMap>;
+	= UnconnectedComponent<TProps, TOwnContext, TStateMap, TDispatchMap>;

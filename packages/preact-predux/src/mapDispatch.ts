@@ -2,14 +2,13 @@ import type { ActionCreator, Store, Thunk } from '@calmdownval/predux';
 
 import type { AnyProps } from './propsShallowEqual';
 
-interface DispatchMapObject<TState>
-{
-	[key: string]: ActionCreator<TState>;
+interface DispatchMapObject {
+	[key: string]: ActionCreator;
 }
 
-export type DispatchMap<TState = any, TOwnProps = any> =
-	| DispatchMapObject<TState>
-	| ((props?: TOwnProps) => DispatchMapObject<TState>);
+export type DispatchMap<TProps = any> =
+	| DispatchMapObject
+	| ((props?: TProps) => DispatchMapObject);
 
 type ArgumentsOf<TFunc> =
 	TFunc extends (...args: infer TArgs) => any ? TArgs : never;
@@ -18,57 +17,49 @@ type WithReturnType<TFunc, TReturn> =
 	(...args: ArgumentsOf<TFunc>) => TReturn;
 
 type ResolveThunks<T> =
-	T extends DispatchMapObject<any>
+	T extends DispatchMapObject
 		? { [K in keyof T]: WithReturnType<T[K], ReturnType<T[K]> extends Thunk<infer R> ? R : void> }
 		: {};
 
 export type InferDispatchPropTypes<T extends DispatchMap> =
 	ResolveThunks<T extends (...args: any[]) => any ? ReturnType<T> : T>;
 
-interface Proxy<TState>
-{
+interface Proxy {
 	readonly endpoint: (...args: any[]) => any;
-	action?: ActionCreator<TState>;
+	action?: ActionCreator;
 }
 
-function createProxy<TState>(store: Store<TState>)
-{
-	const proxy: Proxy<TState> =
-	{
-		endpoint: function ()
-		{
+function createProxy(store: Store) {
+	const proxy: Proxy = {
+		endpoint: function () {
 			return store.dispatch(proxy.action!.apply(null, arguments as never));
 		}
 	};
 	return proxy;
 }
 
-export function initDispatchMap<TState, TOwnProps>(map?: DispatchMap<TState, TOwnProps>)
-{
-	type ProxyMap = { [key: string]: Proxy<TState> | undefined };
+export function initDispatchMap<TProps>(map?: DispatchMap<TProps>) {
+	type ProxyMap = Record<string, Proxy>;
 
 	const isUsingProps = typeof map === 'function' && map.length >= 1;
 	let dispatchers: ProxyMap | null = null;
 
-	return (target: AnyProps, store: Store<TState>, props: TOwnProps, _stateChanged: boolean, propsChanged: boolean, storeChanged: boolean) =>
-	{
-		// force all dispatchers to re-bind when store changes (shouldn't be often)
-		if (storeChanged)
-		{
+	return (target: AnyProps, store: Store, props: TProps, _stateChanged: boolean, propsChanged: boolean, storeChanged: boolean) => {
+
+		// force all dispatchers to be rebound when store itself changes (shouldn't be often)
+		if (storeChanged) {
 			dispatchers = null;
 		}
 
-		if ((propsChanged && isUsingProps) || !dispatchers)
-		{
+		// refresh dispatch mapping only when necessary
+		if ((propsChanged && isUsingProps) || !dispatchers) {
 			const mapping = typeof map === 'function' ? map(props) : map;
 			const newDispatchers: ProxyMap = {};
-			if (!dispatchers)
-			{
+			if (!dispatchers) {
 				dispatchers = newDispatchers;
 			}
 
-			for (const key in mapping)
-			{
+			for (const key in mapping) {
 				const proxy = dispatchers[key] || createProxy(store);
 				proxy.action = mapping[key];
 				newDispatchers[key] = proxy;
@@ -77,9 +68,9 @@ export function initDispatchMap<TState, TOwnProps>(map?: DispatchMap<TState, TOw
 			dispatchers = newDispatchers;
 		}
 
-		for (const key in dispatchers)
-		{
-			target[key] = dispatchers[key]!.endpoint;
+		// assign the mapped props
+		for (const key in dispatchers) {
+			target[key] = dispatchers[key].endpoint;
 		}
 	};
 }

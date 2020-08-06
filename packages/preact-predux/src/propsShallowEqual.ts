@@ -1,18 +1,12 @@
-export interface AnyProps
-{
-	[key: string]: unknown;
-}
+export type AnyProps = Record<string, any>;
 
-export function propsShallowEqual(a: AnyProps, b: AnyProps)
-{
+export function propsShallowEqual(a: AnyProps, b: AnyProps) {
 	const keys = Object.keys(a);
 	const length = keys.length;
 
-	for (let i = 0; i < length; ++i)
-	{
+	for (let i = 0; i < length; ++i) {
 		const key = keys[i];
-		if (!(a[key] === b[key] && Object.prototype.hasOwnProperty.call(b, key)))
-		{
+		if (!(a[key] === b[key] && Object.prototype.hasOwnProperty.call(b, key))) {
 			return false;
 		}
 	}

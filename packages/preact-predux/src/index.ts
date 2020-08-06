@@ -1,4 +1,4 @@
 export { connect, UC, UFC, UnconnectedComponent, UnconnectedFunctionalComponent } from './connect';
-export { createProvider } from './context';
+export { createProvider, useStore } from './context';
 export { propsShallowEqual } from './propsShallowEqual';
-export { combine, combineMemo, select, Selector } from './selectors';
+export { composeSelector, composeSelectorMemo, selectComposite, Selector } from './selectors';
