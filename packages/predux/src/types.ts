@@ -22,6 +22,7 @@ export interface ActionCreator<TArgs extends any[] = any> {
 export interface Reducer<TState = any, TArgs extends any[] = any> {
 	(state: TState, ...args: TArgs): TState;
 	readonly actionUID: string;
+	readonly displayName?: string;
 	readonly sliceUID: string;
 }
 

@@ -5,6 +5,8 @@ type Mutable<T> =
 	& (T extends (...args: infer A) => infer R ? ((...args: A) => R) : {})
 	& { -readonly [K in keyof T]+?: T[K] };
 
+export function createSlice<TState>(initialState: TState): Slice<TState>;
+export function createSlice<TState>(displayName: string, initialState: TState): Slice<TState>;
 export function createSlice<TState>(): Slice<TState> {
 	if (arguments.length === 0 || arguments.length > 2) {
 		throw new Error("invalid arguments for the 'createSlice' function");
@@ -47,7 +49,8 @@ export function createSlice<TState>(): Slice<TState> {
 			if (typeof arguments[0] !== 'string') {
 				throw new Error('action displayName must be a string');
 			}
-			actionCreator.displayName = arguments[0];
+			actionCreator.displayName =
+			reducer.displayName = `${slice.displayName || slice.sliceUID}/${arguments[0]}`;
 		}
 
 		// assign metadata
@@ -64,7 +67,7 @@ export function createSlice<TState>(): Slice<TState> {
 		if (typeof selector !== 'function') {
 			throw new Error('selector must be a function');
 		}
-		if (typeof selector.sliceUID) {
+		if (selector.sliceUID) {
 			throw new Error('cannot share selector functions');
 		}
 		selector.sliceUID = sliceUID;

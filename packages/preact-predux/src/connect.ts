@@ -18,7 +18,7 @@ function incrementReducer(updateCount: number): number {
 	return updateCount + 1;
 }
 
-export function connect<TProps, TStateMap extends StateMap<TProps>, TDispatchMap extends DispatchMap<TProps>>(
+export function connect<TStateMap extends StateMap = {}, TDispatchMap extends DispatchMap = {}>(
 	stateMap?: TStateMap,
 	dispatchMap?: TDispatchMap
 ): ConnectHOC<InferStatePropTypes<TStateMap> & InferDispatchPropTypes<TDispatchMap>> {
@@ -28,17 +28,17 @@ export function connect<TProps, TStateMap extends StateMap<TProps>, TDispatchMap
 			finalProps: {},
 			jsx: null as VNode | null,
 
-			prevOwnProps: null as TProps | null,
+			prevOwnProps: null as {} | null,
 			prevStore: null as Store | null,
 			prevX: -1,
 
 			storeOverride: { stateChanged: Signal.create() } as MutableStore,
-			updateDispatchMapping: initDispatchMap<TProps>(dispatchMap),
+			updateDispatchMapping: initDispatchMap(dispatchMap),
 			updateStateMapping: initStateMap(stateMap)
 		});
 
 	return <T>(Component: ComponentType<T>) => {
-		const Connected = function (this: ClassComponent, ownProps: TProps) {
+		const Connected = function (this: ClassComponent, ownProps: any) {
 			const store = useStore();
 			if (!store) {
 				throw new Error('Store was not provided. Wrap your component tree in a store provider.');
