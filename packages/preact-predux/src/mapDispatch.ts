@@ -1,9 +1,13 @@
-import type { ActionCreator, Store, Thunk } from '@calmdownval/predux';
+import type { Action, Store, Thunk } from '@calmdownval/predux';
 
 import type { AnyProps } from './propsShallowEqual';
 
+interface ActionOrThunkCreator {
+	(...args: any): Action | Thunk<any>;
+}
+
 interface DispatchMapObject {
-	[key: string]: ActionCreator;
+	[key: string]: ActionOrThunkCreator;
 }
 
 export type DispatchMap<TProps = any> =
@@ -26,7 +30,7 @@ export type InferDispatchPropTypes<T extends DispatchMap> =
 
 interface Proxy {
 	readonly endpoint: (...args: any[]) => any;
-	action?: ActionCreator;
+	action?: ActionOrThunkCreator;
 }
 
 function createProxy(store: Store) {
