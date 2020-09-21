@@ -16,6 +16,6 @@ respective readme files:
 ## ToDO
 
 - Tests, tests, tests! Current coverage is 0%
-- Measure performance (count re-renders)
+- Measure performance, count re-renders
 - Create a debugging middleware/plugin
 - Get to a v1.0 release

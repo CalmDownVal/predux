@@ -132,7 +132,7 @@ function getAttributes(args: Selector[], willMemo: boolean): Attributes {
 	let length = args.length - 1;
 
 	// get the composite selector function
-	const fn = args[length] as (...args: any) => any;
+	const fn = args[length] as (...fwd: any) => any;
 
 	// support passing an array of selectors as first arg
 	if (length === 1) {
@@ -224,7 +224,7 @@ function createCompositeSelectorMemo({ fn, needsProps, selectors }: Attributes) 
 	return compositeSelector;
 }
 
-function createFactory(attrs: Attributes, selectorFactory: (attrs: Attributes) => CompositeSelectorFunction) {
+function createFactory(attrs: Attributes, selectorFactory: (fwd: Attributes) => CompositeSelectorFunction) {
 	const factory = () => {
 		const { selectors } = attrs;
 		for (let index = 0; index < selectors.length; ++index) {

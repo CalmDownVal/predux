@@ -109,7 +109,7 @@
 	"settings": {
 		"import/resolver": {
 			"typescript": {
-				"directory": [
+				"project": [
 					"./packages/preact-predux/tsconfig.json",
 					"./packages/predux/tsconfig.json"
 				]

@@ -1,27 +1,33 @@
 {
 	"name": "@calmdownval/preact-predux",
 	"version": "0.2.0",
-	"license": "MIT",
-	"main": "dist/index.js",
-	"types": "dist/index.d.ts",
-	"type": "commonjs",
+	"license": "ISC",
+	"main": "./dist/cjs/index.js",
+	"module": "./dist/mjs/index.mjs",
+	"types": "./dist/cjs/index.d.ts",
+	"exports": {
+		".": {
+			"require": "./dist/cjs/index.js",
+			"default": "./dist/mjs/index.mjs"
+		}
+	},
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/CalmDownVal/predux.git"
 	},
 	"scripts": {
-		"build": "rm -rf dist/* && tsc",
+		"build": "../../script/build.sh",
 		"prepublishOnly": "npm run build"
 	},
 	"dependencies": {
-		"@calmdownval/signal": ">=1.0.1"
+		"@calmdownval/signal": ">=1.0.2"
 	},
 	"peerDependencies": {
 		"@calmdownval/predux": ">=0.2.0",
-		"preact": "10.x.x"
+		"preact": ">=10.0.0"
 	},
 	"devDependencies": {
 		"preact": "10.x.x",
-		"typescript": "3.9.x"
+		"typescript": "4.0.x"
 	}
 }
