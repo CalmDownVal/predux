@@ -1,6 +1,6 @@
 {
 	"name": "@calmdownval/predux",
-	"version": "0.2.0",
+	"version": "0.2.0-beta",
 	"license": "ISC",
 	"type": "commonjs",
 	"main": "./dist/cjs/index.js",
