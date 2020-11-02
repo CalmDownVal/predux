@@ -1,13 +1,10 @@
+import type { Mutable } from './mutability';
 import type { Reducer, Selector, Slice, SliceInternal } from './types';
 import { getUID } from './uid';
 
-type Mutable<T> =
-	& (T extends (...args: infer A) => infer R ? ((...args: A) => R) : {})
-	& { -readonly [K in keyof T]+?: T[K] };
-
 export function createSlice<TState>(initialState: TState): Slice<TState>;
 export function createSlice<TState>(displayName: string, initialState: TState): Slice<TState>;
-export function createSlice<TState>(): Slice<TState> {
+export function createSlice<TState>() {
 	if (arguments.length === 0 || arguments.length > 2) {
 		throw new Error("invalid arguments for the 'createSlice' function");
 	}
@@ -63,19 +60,14 @@ export function createSlice<TState>(): Slice<TState> {
 		return actionCreator;
 	};
 
-	const createSelector = function <TResult>(selector: Mutable<Selector<TResult, TState>>) {
-		if (typeof selector !== 'function') {
+	const createSelector = <TResult>(callback: (state: TState) => TResult): Selector<TResult, TState> => {
+		if (typeof callback !== 'function') {
 			throw new Error('selector must be a function');
 		}
-		if (selector.sliceUID) {
-			throw new Error('cannot share selector functions');
-		}
-		selector.sliceUID = sliceUID;
-		return selector as Selector<TResult, TState>;
+		return { callback, sliceUID };
 	};
 
 	const slice: Mutable<SliceInternal<TState>> = {
-		_isPreduxSlice: true,
 		createAction,
 		createSelector,
 		initialState,

@@ -12,10 +12,12 @@ export function until<TState = {}>(
 			return;
 		}
 
-		let handle = 0;
+		let handle: number;
 		const callback = () => {
 			if (store.select(selector)) {
-				handle && clearTimeout(handle);
+				if (timeout > 0) {
+					clearTimeout(handle);
+				}
 				off(store.stateChanged, callback);
 				resolve();
 			}

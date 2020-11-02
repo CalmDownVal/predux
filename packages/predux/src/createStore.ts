@@ -29,7 +29,7 @@ export function createStore(slices: readonly Slice[]): Store {
 
 	// eslint-disable-next-line arrow-body-style
 	const select = <TResult, TState>(selector: Selector<TResult, TState>) => {
-		// if (typeof selector !== 'function') {
+		// if (typeof selector.callback !== 'function') {
 		// 	throw new Error('selector must be a function');
 		// }
 		// if (!(selector as Selector<TResult, TState>).sliceUID) {
@@ -38,7 +38,7 @@ export function createStore(slices: readonly Slice[]): Store {
 		// if (!state.hasOwnProperty(selector.sliceUID)) {
 		// 	throw new Error('store does not contain the slice requested by this selector');
 		// }
-		return selector(state[selector.sliceUID] as TState);
+		return selector.callback(state[selector.sliceUID] as TState);
 	};
 
 	const dispatch = (action: Action | Thunk<any>, forceImmediate?: boolean) => {
@@ -73,7 +73,7 @@ export function createStore(slices: readonly Slice[]): Store {
 			if (newSubState !== oldSubState) {
 				didStateChange = true;
 				state = Object.assign({}, state);
-				state[reducer.sliceUID] =newSubState;
+				state[reducer.sliceUID] = newSubState;
 			}
 		}
 		finally {

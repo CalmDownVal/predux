@@ -1,14 +1,13 @@
 import type { Signal } from '@calmdownval/signal';
 
 /**
- * Action object containing necessary information to invoke its corresponding
- * reducer function.
+ * Action tuple with data necessary to invoke its corresponding reducer.
  */
 export type Action<TArgs extends any[] = any> =
 	((uid: string, ...args: TArgs) => any) extends (...args: infer U) => any ? Readonly<U> : never;
 
 /**
- * A function to create Action objects which can be dispatched to the store.
+ * A function to create action tuples that can be dispatched to the store.
  */
 export interface ActionCreator<TArgs extends any[] = any> {
 	(...args: TArgs): Action<TArgs>;
@@ -30,7 +29,7 @@ export interface Reducer<TState = any, TArgs extends any[] = any> {
  * A function to access a specific value within the store.
  */
 export interface Selector<TResult = any, TState = any> {
-	(state: TState): TResult;
+	readonly callback: (state: TState) => TResult;
 	readonly sliceUID: string;
 }
 
@@ -56,13 +55,15 @@ export interface Slice<TState = any> {
 }
 
 export interface SliceInternal<TState = any> extends Slice<TState> {
-	readonly _isPreduxSlice: true;
 	readonly initialState: TState;
 	readonly reducers: readonly Reducer<TState>[];
 }
 
 export type Thunk<TResult = void> =
 	(dispatch: Dispatch, select: Select, store: Store) => TResult;
+
+export type AsyncThunk<TResult = void> =
+	Thunk<Promise<TResult>>;
 
 export type Dispatch =
 	<T extends Action | Thunk<any>>(action: T, forceImmediate?: boolean) => T extends Thunk<infer R> ? R : void;

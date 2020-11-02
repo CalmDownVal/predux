@@ -1,9 +1,13 @@
-function hex(n: number) {
-	let str = n.toString(16);
-	while (str.length < 4) {
-		str = '0' + str;
-	}
-	return str;
+function hex4(n: number) {
+	return String.fromCharCode(n + (n < 10 ? 48 : 87));
+}
+
+function hex8(n: number) {
+	return hex4(n >>> 4) + hex4(n & 0x0f);
+}
+
+function hex16(n: number) {
+	return hex8(n >>> 8) + hex8(n & 0xff);
 }
 
 function rng() {
@@ -14,5 +18,5 @@ let counter = rng();
 export function getUID() {
 	const a = rng();
 	const b = (counter = (counter + 1) & 0xffff);
-	return hex(a) + hex(b);
+	return hex16(a) + hex16(b);
 }
