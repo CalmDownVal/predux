@@ -1,6 +1,6 @@
 {
 	"name": "@calmdownval/preact-predux",
-	"version": "0.2.0-beta",
+	"version": "0.2.0-beta.2",
 	"license": "ISC",
 	"main": "./dist/cjs/index.js",
 	"module": "./dist/mjs/index.mjs",
@@ -23,7 +23,7 @@
 		"@calmdownval/signal": ">=1.0.2"
 	},
 	"peerDependencies": {
-		"@calmdownval/predux": ">=0.2.0",
+		"@calmdownval/predux": "0.2.0-beta.2",
 		"preact": ">=10.0.0"
 	},
 	"devDependencies": {

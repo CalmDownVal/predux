@@ -1,38 +1,36 @@
-import type { Select, Selector as StateSelector } from '@calmdownval/predux';
-
+import type { Select, Selector as StateSelectorInstance } from '@calmdownval/predux';
 
 // ┌─┐┌─┐┬  ┌─┐┌─┐┌┬┐┌─┐┬─┐  ┌┬┐┬ ┬┌─┐┌─┐┌─┐
 // └─┐├┤ │  ├┤ │   │ │ │├┬┘   │ └┬┘├─┘├┤ └─┐
 // └─┘└─┘┴─┘└─┘└─┘ ┴ └─┘┴└─   ┴  ┴ ┴  └─┘└─┘
 
-type PropsSelector<TResult = any, TProps = any> =
+type PropsSelectorInstance<TResult = any, TProps = any> =
 	(props: TProps) => TResult;
 
 interface CompositeMixin {
 	readonly isComposite: boolean;
-	readonly isFactory: boolean;
 	readonly isUsingProps: boolean;
 }
 
-interface CompositeSelectorFunction<TResult = any, TProps = any> extends CompositeMixin {
-	(select: Select, props: TProps): TResult;
+interface CompositeSelectorInstance<TResult = any, TProps = any> extends CompositeMixin {
+	readonly callback: (select: Select, props: TProps) => TResult;
 }
 
 interface CompositeSelectorFactory<TResult = any, TProps = any> extends CompositeMixin {
-	(): CompositeSelectorFunction<TResult, TProps>;
+	readonly factory: () => CompositeSelectorInstance<TResult, TProps>;
 }
 
 type CompositeSelector<TResult = any, TProps = any> =
-	| CompositeSelectorFunction<TResult, TProps>
+	| CompositeSelectorInstance<TResult, TProps>
 	| CompositeSelectorFactory<TResult, TProps>;
 
-export type InitializedSelector<TResult = any, TProps = any> =
-	| StateSelector<TResult>
-	| PropsSelector<TResult, TProps>
-	| CompositeSelectorFunction<TResult, TProps>;
+export type SelectorInstance<TResult = any, TProps = any> =
+	| StateSelectorInstance<TResult>
+	| PropsSelectorInstance<TResult, TProps>
+	| CompositeSelectorInstance<TResult, TProps>;
 
 export type Selector<TResult = any, TProps = any> =
-	| InitializedSelector<TResult, TProps>
+	| SelectorInstance<TResult, TProps>
 	| CompositeSelectorFactory<TResult, TProps>;
 
 
@@ -40,8 +38,8 @@ export type Selector<TResult = any, TProps = any> =
 //  │ └┬┘├─┘├┤    ││├┤  │ ├┤ │   │ ││ ││││
 //  ┴  ┴ ┴  └─┘  ─┴┘└─┘ ┴ └─┘└─┘ ┴ ┴└─┘┘└┘
 
-function isStateSelector<TResult, TProps>(obj: Selector<TResult, TProps>): obj is StateSelector<TResult> {
-	return Boolean((obj as StateSelector).sliceUID);
+function isPredux<TResult, TProps>(obj: Selector<TResult, TProps>): obj is StateSelectorInstance<TResult> {
+	return !!(obj as StateSelectorInstance).sliceUID;
 }
 
 function isComposite<TResult, TProps>(obj: Selector<TResult, TProps>): obj is CompositeSelector<TResult, TProps> {
@@ -49,34 +47,33 @@ function isComposite<TResult, TProps>(obj: Selector<TResult, TProps>): obj is Co
 }
 
 export function isFactory<TResult, TProps>(obj: Selector<TResult, TProps>): obj is CompositeSelectorFactory<TResult, TProps> {
-	return (obj as CompositeSelectorFactory).isFactory === true;
+	return !!(obj as CompositeSelectorFactory).factory;
 }
 
-export function isUsingProps<TResult, TProps>(obj: Selector<TResult, TProps>): obj is CompositeSelectorFunction<TResult, TProps> {
-	return (obj as CompositeSelectorFunction).isUsingProps === true;
+export function isUsingProps<TResult, TProps>(obj: Selector<TResult, TProps>): obj is CompositeSelector<TResult, TProps> {
+	return (obj as CompositeSelector).isUsingProps === true;
 }
 
-export function selectInitialized<TResult, TProps>(selector: InitializedSelector<TResult, TProps>, select: Select, props: TProps) {
-	return isComposite(selector)
-		? selector(select, props)
-		: isStateSelector(selector)
-			? select(selector)
-			: selector(props);
+export function selectCompositeInternal<TResult, TProps>(instance: SelectorInstance<TResult, TProps>, select: Select, props: TProps) {
+	return isComposite(instance)
+		? instance.callback(select, props)
+		: isPredux(instance)
+			? select(instance)
+			: instance(props);
 }
 
 export function selectComposite<TResult>(selector: Selector<TResult, void>, select: Select): TResult;
 export function selectComposite<TResult, TProps>(selector: Selector<TResult, TProps>, select: Select, props: TProps): TResult;
 export function selectComposite<TResult, TProps>(selector: Selector<TResult, TProps>, select: Select, props?: TProps) {
-	return selectInitialized(isFactory(selector) ? selector() : selector, select, props!);
+	return selectCompositeInternal(isFactory(selector) ? selector.factory() : selector, select, props!);
 }
-
 
 // ┌─┐┌─┐┌┬┐┌─┐┌─┐┌─┐┬┌┬┐┬┌─┐┌┐┌  ┬  ┌─┐┌─┐┬┌─┐
 // │  │ ││││├─┘│ │└─┐│ │ ││ ││││  │  │ ││ ┬││
 // └─┘└─┘┴ ┴┴  └─┘└─┘┴ ┴ ┴└─┘┘└┘  ┴─┘└─┘└─┘┴└─┘
 
-type UnboxProps<T> = T extends readonly Selector<never, infer P>[] ? P : never;
-type UnboxResult<T> = { [K in keyof T]: T[K] extends Selector<infer R, never> ? R : never };
+type UnboxProps<T> = T extends readonly Selector<any, infer P>[] ? P : never;
+type UnboxResult<T> = { [K in keyof T]: T[K] extends Selector<infer R, any> ? R : never };
 
 interface ComposeSelector {
 	<TSelectors extends readonly Selector<any, any>[], TReturn>(
@@ -121,18 +118,18 @@ interface ComposeSelector {
 }
 
 interface Attributes {
-	fn: (...args: any) => any;
+	callback: (...args: any) => any;
 	needsFactory: boolean;
 	needsProps: boolean;
-	selectors: InitializedSelector[];
+	selectors: SelectorInstance[];
 }
 
 function getAttributes(args: Selector[], willMemo: boolean): Attributes {
 	let selectors = args;
 	let length = args.length - 1;
 
-	// get the composite selector function
-	const fn = args[length] as (...fwd: any) => any;
+	// get the composite selector callback
+	const callback = args[length] as (...fwd: any) => any;
 
 	// support passing an array of selectors as first arg
 	if (length === 1) {
@@ -167,36 +164,36 @@ function getAttributes(args: Selector[], willMemo: boolean): Attributes {
 	}
 
 	return {
-		fn,
+		callback,
 		needsFactory,
 		needsProps,
-		selectors
+		selectors: selectors as SelectorInstance[]
 	};
 }
 
-function createCompositeSelector({ fn, needsProps, selectors }: Attributes) {
-	const compositeSelector = (select: Select, props: any) => {
+function createCompositeSelector({ callback, needsProps, selectors }: Attributes) {
+	const compositeCallback = (select: Select, props: any) => {
 		const length = selectors.length;
 		const values = new Array(length);
 		for (let i = 0; i < length; ++i) {
-			values[i] = selectInitialized(selectors[i], select, props);
+			values[i] = selectCompositeInternal(selectors[i], select, props);
 		}
-		return fn.apply(null, values);
+		return callback.apply(null, values);
 	};
 
-	compositeSelector.isComposite = true;
-	compositeSelector.isFactory = false;
-	compositeSelector.isUsingProps = needsProps;
-
-	return compositeSelector;
+	return {
+		callback: compositeCallback,
+		isComposite: true,
+		isUsingProps: needsProps
+	};
 }
 
-function createCompositeSelectorMemo({ fn, needsProps, selectors }: Attributes) {
+function createCompositeSelectorMemo({ callback, needsProps, selectors }: Attributes) {
 	let values: any[] | undefined;
 	let lastResult: any = null;
 
 	const length = selectors.length;
-	const compositeSelector = (select: Select, props: any) => {
+	const compositeCallback = (select: Select, props: any) => {
 		let didChange = false;
 
 		if (!values) {
@@ -205,43 +202,43 @@ function createCompositeSelectorMemo({ fn, needsProps, selectors }: Attributes) 
 		}
 
 		for (let i = 0; i < length; ++i) {
-			const value = selectInitialized(selectors[i], select, props);
+			const value = selectCompositeInternal(selectors[i], select, props);
 			didChange = didChange || values[i] !== value;
 			values[i] = value;
 		}
 
 		if (didChange) {
-			lastResult = fn.apply(null, values);
+			lastResult = callback.apply(null, values);
 		}
 
 		return lastResult;
 	};
 
-	compositeSelector.isComposite = true;
-	compositeSelector.isFactory = false;
-	compositeSelector.isUsingProps = needsProps;
-
-	return compositeSelector;
+	return {
+		callback: compositeCallback,
+		isComposite: true,
+		isUsingProps: needsProps
+	};
 }
 
-function createFactory(attrs: Attributes, selectorFactory: (fwd: Attributes) => CompositeSelectorFunction) {
+function createFactory(attrs: Attributes, selectorFactory: (fwd: Attributes) => CompositeSelectorInstance) {
 	const factory = () => {
 		const { selectors } = attrs;
 		for (let index = 0; index < selectors.length; ++index) {
 			const selector = selectors[index];
 			if (isFactory(selector)) {
-				selectors[index] = selector();
+				selectors[index] = selector.factory();
 			}
 		}
 
 		return selectorFactory(attrs);
 	};
 
-	factory.isComposite = true;
-	factory.isFactory = true;
-	factory.isUsingProps = true;
-
-	return factory;
+	return {
+		factory,
+		isComposite: true,
+		isUsingProps: true
+	};
 }
 
 export const composeSelector: ComposeSelector = function () {

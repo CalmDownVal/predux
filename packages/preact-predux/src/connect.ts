@@ -1,5 +1,5 @@
-import { Store } from '@calmdownval/predux';
-import * as Signal from '@calmdownval/signal';
+import { Mutable, Store } from '@calmdownval/predux';
+import { create, off, on } from '@calmdownval/signal';
 import { Component as ClassComponent, ComponentType, FunctionalComponent, h, VNode } from 'preact';
 import { useLayoutEffect, useMemo, useReducer } from 'preact/hooks';
 
@@ -10,9 +10,6 @@ import { propsShallowEqual } from './propsShallowEqual';
 
 type ConnectHOC<TConnectedProps> =
 	<TProps>(Component: ComponentType<TProps>) => FunctionalComponent<Omit<TProps, keyof TConnectedProps>>;
-
-type MutableStore =
-	{ -readonly [K in keyof Store]: Store[K] };
 
 function incrementReducer(updateCount: number): number {
 	return updateCount + 1;
@@ -32,7 +29,7 @@ export function connect<TStateMap extends StateMap = {}, TDispatchMap extends Di
 			prevStore: null as Store | null,
 			prevX: -1,
 
-			storeOverride: { stateChanged: Signal.create() } as MutableStore,
+			storeOverride: { stateChanged: create() } as Mutable<Store>,
 			updateDispatchMapping: initDispatchMap(dispatchMap),
 			updateStateMapping: initStateMap(stateMap)
 		});
@@ -56,8 +53,8 @@ export function connect<TStateMap extends StateMap = {}, TDispatchMap extends Di
 					forceUpdate();
 					instance.storeOverride.stateChanged();
 				};
-				Signal.on(store.stateChanged, onUpdate);
-				return () => Signal.off(store.stateChanged, onUpdate);
+				on(store.stateChanged, onUpdate);
+				return () => off(store.stateChanged, onUpdate);
 			}, [ store ]);
 
 			// detect what changed
@@ -82,7 +79,7 @@ export function connect<TStateMap extends StateMap = {}, TDispatchMap extends Di
 
 			// update store context override
 			if (storeChanged) {
-				const clonedStore: MutableStore = Object.assign({}, store);
+				const clonedStore: Mutable<Store> = Object.assign({}, store);
 
 				// replace the signal instance
 				clonedStore.stateChanged = instance.storeOverride.stateChanged;
@@ -105,7 +102,7 @@ export function connect<TStateMap extends StateMap = {}, TDispatchMap extends Di
 	};
 }
 
-type ConnectedProps<
+export type ConnectedProps<
 	TProps,
 	TStateMap extends StateMap,
 	TDispatchMap extends DispatchMap> =
