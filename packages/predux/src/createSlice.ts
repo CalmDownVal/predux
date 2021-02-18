@@ -1,83 +1,83 @@
-import type { Mutable } from './mutability';
-import type { Reducer, Selector, Slice, SliceInternal } from './types';
-import { getUID } from './uid';
+import type { ActionCreator, Reducer, Selector } from './types';
+import { getUid } from './uid';
 
-export function createSlice<TState>(initialState: TState): Slice<TState>;
-export function createSlice<TState>(displayName: string, initialState: TState): Slice<TState>;
+export interface SliceInit<TState = any> {
+	readonly actions: { readonly [name: string]: Reducer<TState> };
+	readonly displayName?: string;
+	readonly initialState: TState;
+	readonly selectors: { readonly [name: string]: Selector<TState> };
+}
+
 export function createSlice<TState>() {
-	if (arguments.length === 0 || arguments.length > 2) {
-		throw new Error("invalid arguments for the 'createSlice' function");
-	}
-
-	const initialState: TState = arguments[arguments.length - 1];
-	const sliceUID = getUID();
-
-	const reducers: Reducer<TState>[] = [];
-	const createAction = function () {
-		if (arguments.length === 0 || arguments.length > 2) {
-			throw new Error("invalid arguments for the 'createAction' function");
-		}
-
-		// get and validate the reducer function
-		const reducer: Mutable<Reducer<TState>> = arguments[arguments.length - 1];
-		if (typeof reducer !== 'function') {
-			throw new Error('reducer must be a function');
-		}
-		if (reducer.actionUID || reducer.sliceUID) {
-			throw new Error('cannot share reducer functions');
-		}
-
-		// get the action creator
-		// speedier alternative to (...args) => [ actionUID, ...args ] as const;
-		const actionCreator = function () {
-			const length = arguments.length;
-			const action = new Array(length + 1) as [ string, ...unknown[] ];
-
-			action[0] = actionUID;
-			for (let i = 0; i < length; ++i) {
-				action[i + 1] = arguments[i];
-			}
-
-			return action;
+	return <TInit extends SliceInit<TState>>(init: TInit) => {
+		type MappedActions = {
+			readonly [K in keyof TInit['actions']]: TInit['actions'][K] extends Reducer<TState, infer TPayload>
+				? ActionCreator<TState, TPayload>
+				: never
 		};
 
-		// assign metadata to the action creator and reducer
-		if (arguments.length === 2) {
-			if (typeof arguments[0] !== 'string') {
-				throw new Error('action displayName must be a string');
+		type MappedSelectors = {
+			readonly [K in keyof TInit['selectors']]: TInit['selectors'][K] extends Selector<infer TResult>
+				? Selector<TResult>
+				: never
+		};
+
+		const actions: Record<string, ActionCreator<TState>> = {};
+		const selectors: Record<string, Selector> = {};
+		const sliceUid = getUid();
+		const slice = {
+			displayName: init.displayName ?? sliceUid,
+			initialState: init.initialState,
+			actions: actions as MappedActions,
+			selectors: selectors as MappedSelectors,
+			uid: sliceUid
+		};
+
+		for (const key in init.actions) {
+			if (!Object.prototype.hasOwnProperty.call(init.actions, key)) {
+				continue;
 			}
-			actionCreator.displayName =
-			reducer.displayName = `${slice.displayName || slice.sliceUID}/${arguments[0]}`;
+
+			// the function below could be significantly simplified with the use
+			// of spread operators, however handling arguments manually yields
+			// better performance even in recent engines
+			/* eslint-disable prefer-rest-params, prefer-spread */
+
+			const actionUid = getUid();
+			const creator = function () {
+				const { length } = arguments;
+				const action = new Array(length + 1) as [ string, ...any ];
+				action[0] = actionUid;
+
+				for (let i = 0; i < length; ++i) {
+					action[i + 1] = arguments[i];
+				}
+
+				return action;
+			};
+
+			/* eslint-enable */
+			creator.displayName = key;
+			creator.reducer = init.actions[key];
+			creator.slice = slice;
+			creator.uid = actionUid;
+
+			actions[key] = creator;
 		}
 
-		// assign metadata
-		const actionUID = `${sliceUID}/${getUID()}`;
-		actionCreator.actionUID =
-		reducer.actionUID = actionUID;
-		reducer.sliceUID = sliceUID;
+		for (const key in init.selectors) {
+			if (!Object.prototype.hasOwnProperty.call(init.actions, key)) {
+				continue;
+			}
 
-		reducers.push(reducer as Reducer<TState>);
-		return actionCreator;
-	};
-
-	const createSelector = <TResult>(callback: (state: TState) => TResult): Selector<TResult, TState> => {
-		if (typeof callback !== 'function') {
-			throw new Error('selector must be a function');
+			const selector = init.selectors[key];
+			selectors[key] = state => selector(state[sliceUid]);
 		}
-		return { callback, sliceUID };
+
+		Object.freeze(actions);
+		Object.freeze(selectors);
+		Object.freeze(slice);
+
+		return slice;
 	};
-
-	const slice: Mutable<SliceInternal<TState>> = {
-		createAction,
-		createSelector,
-		initialState,
-		reducers,
-		sliceUID
-	};
-
-	if (arguments.length === 2) {
-		slice.displayName = arguments[0];
-	}
-
-	return slice as Slice<TState>;
 }

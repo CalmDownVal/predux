@@ -1,3 +1,6 @@
+// eslint-disable-next-line @typescript-eslint/no-magic-numbers
+type DefaultTMax = 12;
+
 //#region type magic to limit depth of recursive types
 
 type RemoveOne<T extends any[]> =
@@ -6,9 +9,9 @@ type RemoveOne<T extends any[]> =
 type AddOne<T extends any[], E> =
 	((arg: E, ...rest: T) => unknown) extends (...rest: infer A) => unknown ? A : never;
 
-type NumberToTuple<N extends number, TMax extends number = 16, TOut extends any[] = []> = {
-	match: TOut
-	next: NumberToTuple<N, TMax, AddOne<TOut, 1>>
+type NumberToTuple<N extends number, TMax extends number = DefaultTMax, TOut extends any[] = []> = {
+	match: TOut;
+	next: NumberToTuple<N, TMax, AddOne<TOut, 1>>;
 }[TOut['length'] extends N ? 'match' : TOut['length'] extends TMax ? 'match' : 'next'];
 
 type Decrease<N extends number> =
@@ -18,9 +21,9 @@ type Decrease<N extends number> =
 
 //#region utility types
 
-type Skip = boolean | number | string | symbol | null | undefined | Date | RegExp | Function;
+type Skip = boolean | number | string | symbol | null | undefined | Date | RegExp | ((...args: any) => any);
 
-type PreserveCallable<T> = T extends { (...args: infer A): infer R; }
+type PreserveCallable<T> = T extends { (...args: infer A): infer R }
 	? { (...args: A): R }
 	: {};
 
@@ -30,7 +33,7 @@ type PreserveCallable<T> = T extends { (...args: infer A): infer R; }
 
 type MutableIterable = any[] | Set<any> | Map<any, any>;
 
-type ImmutableDeepItem<T, TMax extends number = 8> =
+type ImmutableDeepItem<T, TMax extends number = DefaultTMax> =
 	TMax extends 0
 		? T
 		: T extends Skip
@@ -39,7 +42,7 @@ type ImmutableDeepItem<T, TMax extends number = 8> =
 				? ImmutableDeepIterable<T, Decrease<TMax>>
 				: ImmutableDeep<T, Decrease<TMax>>;
 
-type ImmutableDeepIterable<T, TMax extends number = 8> =
+type ImmutableDeepIterable<T, TMax extends number = DefaultTMax> =
 	T extends (infer I0)[]
 		? readonly ImmutableDeepItem<I0, Decrease<TMax>>[]
 		: T extends Set<infer J0>
@@ -48,7 +51,7 @@ type ImmutableDeepIterable<T, TMax extends number = 8> =
 				? ReadonlyMap<ImmutableDeepItem<K0, Decrease<TMax>>, ImmutableDeepItem<K1, Decrease<TMax>>>
 				: T;
 
-export type ImmutableDeep<T, TMax extends number = 8> = PreserveCallable<T> & {
+export type ImmutableDeep<T, TMax extends number = DefaultTMax> = PreserveCallable<T> & {
 	readonly [K in keyof T]: ImmutableDeepItem<T[K], Decrease<TMax>>;
 };
 
@@ -60,7 +63,7 @@ export type Immutable<T> = ImmutableDeep<T, 1>;
 
 type ImmutableIterable = readonly any[] | ReadonlySet<any> | ReadonlyMap<any, any>;
 
-type MutableDeepItem<T, TMax extends number = 8> =
+type MutableDeepItem<T, TMax extends number = DefaultTMax> =
 	TMax extends 0
 		? T
 		: T extends Skip
@@ -69,7 +72,7 @@ type MutableDeepItem<T, TMax extends number = 8> =
 				? MutableDeepIterable<T, Decrease<TMax>>
 				: MutableDeep<T, Decrease<TMax>>;
 
-type MutableDeepIterable<T, TMax extends number = 8> =
+type MutableDeepIterable<T, TMax extends number = DefaultTMax> =
 	T extends readonly (infer I0)[]
 		? MutableDeepItem<I0, Decrease<TMax>>[]
 		: T extends ReadonlySet<infer J0>
@@ -78,7 +81,7 @@ type MutableDeepIterable<T, TMax extends number = 8> =
 				? Map<MutableDeepItem<K0, Decrease<TMax>>, MutableDeepItem<K1, Decrease<TMax>>>
 				: T;
 
-export type MutableDeep<T, TMax extends number = 8> = PreserveCallable<T> & {
+export type MutableDeep<T, TMax extends number = DefaultTMax> = PreserveCallable<T> & {
 	-readonly [K in keyof T]: MutableDeepItem<T[K], Decrease<TMax>>;
 };
 

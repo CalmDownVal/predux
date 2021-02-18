@@ -1,12 +1,14 @@
-export { createSlice } from './createSlice';
+export { createSlice, SliceInit } from './createSlice';
 export { createStore } from './createStore';
+export { when, WhenOptions } from './when';
+
 export type {
 	Immutable,
 	ImmutableDeep,
 	Mutable,
 	MutableDeep
 } from './mutability';
-export { until } from './until';
+
 export type {
 	Action,
 	ActionCreator,

@@ -1,62 +1,60 @@
-import { create } from '@calmdownval/signal';
+import { createSync } from '@calmdownval/signal';
 
-import type { Action, Reducer, Selector, Slice, SliceInternal, Store, Thunk } from './types';
+import type { Action, ActionCreator, Dispatch, Select, Slice, Store, Thunk } from './types';
 
-const [ scheduleFrame, cancelFrame ] = typeof requestAnimationFrame === 'function' && typeof cancelAnimationFrame === 'function'
-	? [ requestAnimationFrame, cancelAnimationFrame ] as const
-	: [ setTimeout, clearTimeout ] as const;
+export interface StoreOptions {
+	readonly scheduleBatch?: (callback: () => void) => any;
+	readonly cancelBatch?: (handle: any) => void;
+}
 
-export function createStore(slices: readonly Slice[]): Store {
-	const dispatchCompleted = create();
-	const stateChanged = create();
-	const reducerMap: Record<string, Reducer> = {};
-
-	let state: Record<string, {}> = {};
-	let frameId = 0;
+export function createStore(
+	slices: readonly Slice[],
+	{
+		scheduleBatch = requestAnimationFrame,
+		cancelBatch = cancelAnimationFrame
+	}: StoreOptions = {}
+): Store {
+	let batchHandle: unknown = null;
 	let isDispatching = false;
+	let state: Record<string, unknown> = {};
+	let store: Store;
 
-	for (const slice of slices as SliceInternal[]) {
-		for (const reducer of slice.reducers) {
-			reducerMap[reducer.actionUID] = reducer;
+	const targetMap: Record<string, ActionCreator | undefined> = {};
+	for (const slice of slices) {
+		for (const key in slice.actions) {
+			const action = slice.actions[key];
+			targetMap[action.uid] = action;
 		}
-		state[slice.sliceUID] = slice.initialState;
+
+		state[slice.uid] = slice.initialState;
 	}
 
 	const batchNotify = () => {
-		frameId = 0;
-		stateChanged();
+		batchHandle = null;
+		store.stateChangedBatch();
 	};
 
-	// eslint-disable-next-line arrow-body-style
-	const select = <TResult, TState>(selector: Selector<TResult, TState>) => {
-		// if (typeof selector.callback !== 'function') {
-		// 	throw new Error('selector must be a function');
-		// }
-		// if (!(selector as Selector<TResult, TState>).sliceUID) {
-		// 	throw new Error('selectors must be created via the Slice<T>::createSelector method');
-		// }
-		// if (!state.hasOwnProperty(selector.sliceUID)) {
-		// 	throw new Error('store does not contain the slice requested by this selector');
-		// }
-		return selector.callback(state[selector.sliceUID] as TState);
-	};
+	const select: Select = selector => selector(state);
 
-	const dispatch = (action: Action | Thunk<any>, forceImmediate?: boolean) => {
+	// dispatch' return type is void, thunks are the only exception
+	/* eslint-disable consistent-return */
+	const dispatch: Dispatch = (action: Action | Thunk<any>, forceImmediate) => {
 		if (isDispatching) {
 			throw new Error('cannot dispatch from a reducer');
 		}
 
+		// invoke thunks
 		if (typeof action === 'function') {
 			return action(dispatch, select, store);
 		}
 
-		// remember state before reduction
+		// lock state before reducer call
 		let didStateChange = false;
 
 		// reducer is user code and may throw
 		try {
-			const reducer = reducerMap[action[0]];
-			if (!reducer) {
+			const target = targetMap[action[0]];
+			if (!target) {
 				return;
 			}
 
@@ -64,16 +62,18 @@ export function createStore(slices: readonly Slice[]): Store {
 			isDispatching = true;
 
 			// get the sub-state and build the reducer args
-			const oldSubState = state[reducer.sliceUID];
-			const args = action.slice() as [ {}, ...unknown[] ];
-			args[0] = oldSubState;
+			const oldSubState = state[target.slice.uid];
+			const args = action.slice() as [ unknown, ...unknown[] ];
+			args[0] = state;
 
-			// call user code and detect state changes
-			const newSubState = reducer.apply(null, args);
+			// invoke the reducer and detect state changes
+			const newSubState = target.reducer(null, args);
 			if (newSubState !== oldSubState) {
 				didStateChange = true;
-				state = Object.assign({}, state);
-				state[reducer.sliceUID] = newSubState;
+				state = {
+					...state,
+					[target.slice.uid]: newSubState
+				};
 			}
 		}
 		finally {
@@ -81,41 +81,38 @@ export function createStore(slices: readonly Slice[]): Store {
 			isDispatching = false;
 		}
 
-		// if we're here it means reducer completed successfully
-		// now we notify our listeners
-		try {
-			// event handlers may throw
-			dispatchCompleted();
-		}
-		finally {
-			// did the state even change?
-			if (!didStateChange) {
-				return;
+		// if we're here it means reducer completed successfully, we now notify our listeners
+		if (didStateChange) {
+			try {
+				store.stateChanged();
 			}
+			finally {
+				// users may force notifications to be sent immediately
+				if (forceImmediate === true) {
+					// cancel any scheduled notifications
+					if (batchHandle !== null) {
+						cancelBatch(batchHandle);
+					}
 
-			// user may force notifications to dispatch immediately
-			if (forceImmediate === true) {
-				// cancel any scheduled notifications
-				if (frameId !== 0) {
-					cancelFrame(frameId);
+					// force a notification
+					batchNotify();
 				}
 
-				// force the notification
-				batchNotify();
-			}
-			else if (frameId === 0) {
-				// we schedule a notification only if it's not already pending
-				frameId = scheduleFrame(batchNotify);
+				// schedule a notification only if it's not already pending
+				else if (batchHandle === null) {
+					batchHandle = scheduleBatch(batchNotify);
+				}
 			}
 		}
 	};
+	/* eslint-enable */
 
-	const store = {
+	store = Object.freeze({
 		dispatch,
-		dispatchCompleted,
 		select,
-		stateChanged
-	};
+		stateChanged: createSync(),
+		stateChangedBatch: createSync()
+	});
 
 	return store;
 }

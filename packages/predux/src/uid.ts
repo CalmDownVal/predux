@@ -1,22 +1,26 @@
-function hex4(n: number) {
+/* eslint-disable @typescript-eslint/no-magic-numbers */
+
+function hex1(n: number) {
 	return String.fromCharCode(n + (n < 10 ? 48 : 87));
 }
 
-function hex8(n: number) {
-	return hex4(n >>> 4) + hex4(n & 0x0f);
+function hex2(n: number) {
+	return hex1(n >>> 4) + hex1(n & 0x0f);
 }
 
-function hex16(n: number) {
-	return hex8(n >>> 8) + hex8(n & 0xff);
+function hex4(n: number) {
+	return hex2(n >>> 8) + hex2(n & 0xff);
 }
 
 function rng() {
-	return (Math.random() * 0x10000) & 0xffff;
+	return Math.random() * 0x10000 & 0xffff;
 }
 
 let counter = rng();
-export function getUID() {
+export function getUid() {
 	const a = rng();
-	const b = (counter = (counter + 1) & 0xffff);
-	return hex16(a) + hex16(b);
+	const b = counter + 1 & 0xffff;
+
+	counter = b;
+	return hex4(a) + hex4(b);
 }
