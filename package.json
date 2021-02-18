@@ -1,14 +1,22 @@
 {
 	"private": true,
 	"workspaces": [
-		"packages/predux",
-		"packages/preact-predux"
+		"packages/*"
 	],
 	"devDependencies": {
-		"@typescript-eslint/eslint-plugin": "4.1.x",
-		"@typescript-eslint/parser": "4.1.x",
-		"eslint": "7.9.x",
+		"@calmdownval/eslint-config": "CalmDownVal/eslint-config",
+		"@rollup/plugin-eslint": "8.0.x",
+		"@rollup/plugin-typescript": "8.2.x",
+		"@rollup/plugin-node-resolve": "11.2.x",
+		"@typescript-eslint/eslint-plugin": "4.12.x",
+		"@typescript-eslint/parser": "4.12.x",
+		"eslint": "7.17.x",
 		"eslint-import-resolver-typescript": "2.3.x",
-		"eslint-plugin-import": "2.22.x"
+		"eslint-plugin-import": "2.22.x",
+		"rollup": "2.39.x",
+		"rollup-plugin-dts": "2.0.x",
+		"rollup-plugin-terser": "7.0.x",
+		"typescript": "4.1.x",
+		"tslib": "2.1.x"
 	}
 }

@@ -6,12 +6,11 @@
 			"dom",
 			"esnext"
 		],
-		"moduleResolution": "node",
 		"newLine": "lf",
 		"strict": true,
 		"types": []
 	},
 	"include": [
-		"./src/**/*"
+		"./src"
 	]
 }

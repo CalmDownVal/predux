@@ -1,119 +1,54 @@
 {
-	"extends": [
-		"plugin:@typescript-eslint/recommended",
-		"plugin:import/errors",
-		"plugin:import/warnings",
-		"plugin:import/typescript"
-	],
-	"parser": "@typescript-eslint/parser",
-	"parserOptions": {
-		"ecmaVersion": 2018,
-		"sourceType": "module"
-	},
 	"root": true,
-	"rules": {
-		"no-bitwise": "off",
-		"no-trailing-spaces": "warn",
-		"no-console": "warn",
-		"no-alert": "warn",
-		"no-shadow": "error",
-		"eqeqeq": "error",
-		"curly": "warn",
-		"eol-last": "warn",
-		"camelcase": "warn",
-		"no-empty": "warn",
-		"no-param-reassign": "error",
-		"arrow-spacing": "warn",
-		"arrow-body-style": [
-			"warn",
-			"as-needed"
-		],
-		"one-var": [
-			"warn",
-			"never"
-		],
-		"linebreak-style": [
-			"warn",
-			"unix"
-		],
-		"semi": [
-			"error",
-			"always"
-		],
-		"quotes": [
-			"warn",
-			"single",
-			{
-				"avoidEscape": true,
-				"allowTemplateLiterals": false
-			}
-		],
-		"quote-props": [
-			"warn",
-			"as-needed"
-		],
-		"arrow-parens": [
-			"warn",
-			"as-needed"
-		],
-		"prefer-rest-params": "off",
-		"prefer-spread": "off",
-		"sort-keys": [
-			"warn",
-			"asc",
-			{
-				"natural": true
-			}
-		],
-
-		// typescript
-		"@typescript-eslint/explicit-function-return-type": "off",
-		"@typescript-eslint/explicit-module-boundary-types": "off",
-		"@typescript-eslint/no-untyped-public-signature": "off",
-		"@typescript-eslint/no-non-null-assertion": "off",
-		"@typescript-eslint/no-inferrable-types": "off",
-		"@typescript-eslint/no-explicit-any": "off",
-		"@typescript-eslint/ban-types": "off",
-		"@typescript-eslint/explicit-member-accessibility": "warn",
-		"indent": "off",
-		"@typescript-eslint/indent": [
-			"warn",
-			"tab",
-			{
-				"SwitchCase": 1
-			}
-		],
-		"brace-style": "off",
-		"@typescript-eslint/brace-style": [
-			"warn",
-			"stroustrup"
-		],
-
-		// imports
-		"import/order": [
-			"warn",
-			{
-				"groups": [
-					"builtin",
-					[ "external", "internal" ],
-					[ "sibling", "parent", "index" ]
-				],
-				"newlines-between": "always",
-				"alphabetize": {
-					"order": "asc",
-					"caseInsensitive": true
-				}
-			}
-		]
+	"extends": [
+		"@calmdownval/eslint-config",
+		"@calmdownval/eslint-config/typescript"
+	],
+	"env": {
+		"browser": true
+	},
+	"parserOptions": {
+		"project": "./packages/**/tsconfig.json"
 	},
 	"settings": {
 		"import/resolver": {
 			"typescript": {
-				"project": [
-					"./packages/preact-predux/tsconfig.json",
-					"./packages/predux/tsconfig.json"
-				]
+				"project": "./packages/**/tsconfig.json"
 			}
 		}
+	},
+
+	// TODO: update these in @calmdownval/eslint-config
+	"rules": {
+		"@typescript-eslint/method-signature-style": "off", // annoying and the meanings are not the same anyway
+		"multiline-comment-style": "off", // very, very annoying
+		"func-style": "off", // nested functions should not be declarations and make sense to use due to `arguments`
+		"spaced-comment": [
+			"warn",
+			"always",
+			{
+				"line": {
+					"markers": [ "/", "#region", "#endregion" ]
+				},
+				"block": {
+					"markers": [ "*" ],
+					"balanced": true
+				}
+			}
+		],
+		"semi-spacing": [
+			"warn",
+			{
+				"before": false,
+				"after": true // for cycles
+			}
+		],
+		"prefer-const": [
+			"warn",
+			{
+				"destructuring": "all",
+				"ignoreReadBeforeAssign": true
+			}
+		]
 	}
 }

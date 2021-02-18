@@ -3,14 +3,14 @@
 		"charset": "utf8",
 		"forceConsistentCasingInFileNames": true,
 		"lib": [
+			"dom",
 			"esnext"
 		],
-		"moduleResolution": "node",
 		"newLine": "lf",
 		"strict": true,
 		"types": []
 	},
 	"include": [
-		"./src/**/*"
+		"./src"
 	]
 }
