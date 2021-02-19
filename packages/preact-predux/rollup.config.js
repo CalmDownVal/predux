@@ -1,4 +1,3 @@
-import eslint from '@rollup/plugin-eslint';
 import typescript from '@rollup/plugin-typescript';
 import definitions from 'rollup-plugin-dts';
 import { terser } from 'rollup-plugin-terser';
@@ -22,7 +21,6 @@ export default [
 			'preact'
 		],
 		plugins: [
-			eslint(),
 			typescript(),
 			terser({
 				output: {
