@@ -1,5 +1,7 @@
 import type { SyncSignal } from '@calmdownval/signal';
 
+import type { Selector, StateSelectorInstance } from './selectors';
+
 /**
  * Action tuple with data necessary to invoke its corresponding reducer.
  */
@@ -25,21 +27,13 @@ export interface ActionCreator<TState = any, TArgs extends readonly any[] = any>
 }
 
 /**
- * A function to access a specific value within the store.
- */
-export interface Selector<TResult = any> {
-	readonly kind: 'state';
-	(state: any): TResult;
-}
-
-/**
  * A collection of related business logic.
  */
 export interface Slice<TState = any> {
 	readonly actions: { readonly [name: string]: ActionCreator<TState> };
 	readonly displayName: string;
 	readonly initialState: TState;
-	readonly selectors: { readonly [name: string]: Selector };
+	readonly selectors: { readonly [name: string]: StateSelectorInstance };
 	readonly uid: string;
 }
 
@@ -65,8 +59,10 @@ export type Dispatch =
 /**
  * Queries the state using the provided selector.
  */
-export type Select =
-	<TResult>(selector: Selector<TResult>) => TResult;
+export interface Select {
+	<TResult>(selector: Selector<TResult, void>): TResult;
+	<TResult, TProps>(selector: Selector<TResult, TProps>, props: TProps): TResult;
+}
 
 /**
  * The store instance. Encapsulates state, its transformations and access to

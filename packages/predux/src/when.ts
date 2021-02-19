@@ -1,6 +1,7 @@
 import { off, on } from '@calmdownval/signal';
 
-import type { Selector, Store } from './types';
+import type { Selector } from './selectors';
+import type { Store } from './types';
 
 export interface WhenOptions<T> {
 	readonly timeout?: number;

@@ -4,7 +4,7 @@ import { useContext } from 'preact/hooks';
 
 export const context = createContext<Store | null>(null);
 
-export function createProvider(store: Store): FunctionalComponent {
+export function createProvider(store: Store) {
 	const component: FunctionalComponent = ({ children }) => h(context.Provider, {
 		children,
 		value: store

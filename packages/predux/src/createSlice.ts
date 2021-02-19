@@ -1,11 +1,12 @@
-import type { ActionCreator, Reducer, Selector } from './types';
+import { SelectorKind, StateSelectorInstance } from './selectors';
+import type { ActionCreator, Reducer } from './types';
 import { getUid } from './uid';
 
 export interface SliceInit<TState = any> {
 	readonly actions: { readonly [name: string]: Reducer<TState> };
 	readonly displayName?: string;
 	readonly initialState: TState;
-	readonly selectors: { readonly [name: string]: Selector<TState> };
+	readonly selectors: { readonly [name: string]: StateSelectorInstance };
 }
 
 export function createSlice<TState>() {
@@ -17,13 +18,13 @@ export function createSlice<TState>() {
 		};
 
 		type MappedSelectors = {
-			readonly [K in keyof TInit['selectors']]: TInit['selectors'][K] extends Selector<infer TResult>
-				? Selector<TResult>
+			readonly [K in keyof TInit['selectors']]: TInit['selectors'][K] extends StateSelectorInstance<infer TResult>
+				? StateSelectorInstance<TResult>
 				: never
 		};
 
 		const actions: Record<string, ActionCreator<TState>> = {};
-		const selectors: Record<string, Selector> = {};
+		const selectors: Record<string, StateSelectorInstance> = {};
 		const sliceUid = getUid();
 		const slice = {
 			displayName: init.displayName ?? sliceUid,
@@ -70,7 +71,7 @@ export function createSlice<TState>() {
 
 			const innerSelector = init.selectors[key];
 			const outerSelector = (state: any) => innerSelector(state[sliceUid]);
-			outerSelector.kind = 'state' as const;
+			outerSelector.kind = SelectorKind.State as const;
 
 			selectors[key] = outerSelector;
 		}

@@ -1,10 +1,17 @@
-import type { Store } from '@calmdownval/predux';
+import {
+	CompositeSelectorInstance,
+	isSelectorFactory,
+	isSelectorUsingProps,
+	PropsSelectorInstance,
+	Selector,
+	StateSelectorInstance,
+	Store
+} from '@calmdownval/predux';
 
 import type { AnyProps } from './propsShallowEqual';
-import { isFactory, isUsingProps, internalSelectComposite, Selector, SelectorInstance } from './selectors';
 
 interface SelectorInfo<TProps> {
-	readonly instance: SelectorInstance<any, TProps>;
+	readonly instance: CompositeSelectorInstance<any, TProps> | PropsSelectorInstance<any, TProps> | StateSelectorInstance;
 	readonly key: string;
 }
 
@@ -21,11 +28,11 @@ export function initStateMap<TProps>(map?: StateMap<TProps>) {
 
 	for (const key in map) {
 		let instance = map[key];
-		if (isFactory(instance)) {
+		if (isSelectorFactory(instance)) {
 			instance = instance();
 		}
 
-		if (isUsingProps(instance)) {
+		if (isSelectorUsingProps(instance)) {
 			selectors.unshift({
 				instance,
 				key
@@ -49,7 +56,7 @@ export function initStateMap<TProps>(map?: StateMap<TProps>) {
 		const until = stateChanged || storeChanged ? selectors.length : propsChanged ? usesPropsUntil : 0;
 		for (let i = 0; i < until; ++i) {
 			const info = selectors[i];
-			target[info.key] = internalSelectComposite(store.select, info.instance, props);
+			target[info.key] = store.select(info.instance, props);
 		}
 	};
 }

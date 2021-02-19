@@ -1,5 +1,6 @@
 import { createSync } from '@calmdownval/signal';
 
+import { invokeSelector, Selector } from './selectors';
 import type { Action, ActionCreator, Dispatch, Select, Slice, Store, Thunk } from './types';
 
 export interface StoreOptions {
@@ -34,7 +35,7 @@ export function createStore(
 		store.stateChangedBatch();
 	};
 
-	const select: Select = selector => selector(state);
+	const select: Select = (selector: Selector, props?: any) => invokeSelector(selector, state, props);
 
 	// dispatch' return type is void, thunks are the only exception
 	/* eslint-disable consistent-return */
