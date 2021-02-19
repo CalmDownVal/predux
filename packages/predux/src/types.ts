@@ -28,6 +28,7 @@ export interface ActionCreator<TState = any, TArgs extends readonly any[] = any>
  * A function to access a specific value within the store.
  */
 export interface Selector<TResult = any> {
+	readonly kind: 'state';
 	(state: any): TResult;
 }
 

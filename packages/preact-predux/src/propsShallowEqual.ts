@@ -1,15 +1,16 @@
 export type AnyProps = Record<string, any>;
 
 export function propsShallowEqual(a: AnyProps, b: AnyProps) {
-	const keys = Object.keys(a);
-	const length = keys.length;
+	let count = 0;
+	for (const key in a) {
+		if (Object.prototype.hasOwnProperty.call(a, key)) {
+			if (a[key] !== b[key]) {
+				return false;
+			}
 
-	for (let i = 0; i < length; ++i) {
-		const key = keys[i];
-		if (!(a[key] === b[key] && Object.prototype.hasOwnProperty.call(b, key))) {
-			return false;
+			++count;
 		}
 	}
 
-	return length === Object.keys(b).length;
+	return count === Object.keys(b).length;
 }

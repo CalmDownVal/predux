@@ -25,31 +25,33 @@ type ResolveThunks<T> =
 		? { [K in keyof T]: WithReturnType<T[K], ReturnType<T[K]> extends Thunk<infer R> ? R : void> }
 		: {};
 
-export type InferDispatchPropTypes<T extends DispatchMap> =
+export type InferDispatchProps<T extends DispatchMap> =
 	ResolveThunks<T extends (...args: any[]) => any ? ReturnType<T> : T>;
 
 interface Proxy {
-	readonly endpoint: (...args: any[]) => any;
+	readonly invoke: (...args: any) => any;
 	action?: ActionOrThunkCreator;
+}
+
+interface ProxyMap {
+	[key: string]: Proxy | undefined;
 }
 
 function createProxy(store: Store) {
 	const proxy: Proxy = {
-		endpoint: function () {
-			return store.dispatch(proxy.action!.apply(null, arguments as never));
+		invoke() {
+			return store.dispatch(this.action!.apply(null, arguments as any));
 		}
 	};
 	return proxy;
 }
 
 export function initDispatchMap<TProps>(map?: DispatchMap<TProps>) {
-	type ProxyMap = Record<string, Proxy>;
-
 	const isUsingProps = typeof map === 'function' && map.length >= 1;
 	let dispatchers: ProxyMap | null = null;
 
+	// eslint-disable-next-line max-params
 	return (target: AnyProps, store: Store, props: TProps, _stateChanged: boolean, propsChanged: boolean, storeChanged: boolean) => {
-
 		// force all dispatchers to be rebound when store itself changes (shouldn't be often)
 		if (storeChanged) {
 			dispatchers = null;
@@ -64,7 +66,7 @@ export function initDispatchMap<TProps>(map?: DispatchMap<TProps>) {
 			}
 
 			for (const key in mapping) {
-				const proxy = dispatchers[key] || createProxy(store);
+				const proxy = dispatchers[key] ?? createProxy(store);
 				proxy.action = mapping[key];
 				newDispatchers[key] = proxy;
 			}
@@ -74,7 +76,7 @@ export function initDispatchMap<TProps>(map?: DispatchMap<TProps>) {
 
 		// assign the mapped props
 		for (const key in dispatchers) {
-			target[key] = dispatchers[key].endpoint;
+			target[key] = dispatchers[key]!.invoke;
 		}
 	};
 }

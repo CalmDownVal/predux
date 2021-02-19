@@ -40,8 +40,7 @@ export function createSlice<TState>() {
 
 			// the function below could be significantly simplified with the use
 			// of spread operators, however handling arguments manually yields
-			// better performance even in recent engines
-			/* eslint-disable prefer-rest-params, prefer-spread */
+			// better performance even in recent engines)
 
 			const actionUid = getUid();
 			const creator = function () {
@@ -56,7 +55,6 @@ export function createSlice<TState>() {
 				return action;
 			};
 
-			/* eslint-enable */
 			creator.displayName = key;
 			creator.reducer = init.actions[key];
 			creator.slice = slice;
@@ -70,8 +68,11 @@ export function createSlice<TState>() {
 				continue;
 			}
 
-			const selector = init.selectors[key];
-			selectors[key] = state => selector(state[sliceUid]);
+			const innerSelector = init.selectors[key];
+			const outerSelector = (state: any) => innerSelector(state[sliceUid]);
+			outerSelector.kind = 'state' as const;
+
+			selectors[key] = outerSelector;
 		}
 
 		Object.freeze(actions);

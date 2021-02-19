@@ -24,6 +24,29 @@
 		"@typescript-eslint/consistent-type-assertions": "off", // :T is preferable, but `as` is sometimes necessary and this rule isn't able to detect that and allow those cases
 		"multiline-comment-style": "off", // very, very annoying
 		"func-style": "off", // nested functions should not be declarations and make sense to use due to `arguments`
+		"@typescript-eslint/no-extra-parens": [
+			"warn",
+			"all",
+			{
+				"conditionalAssign": true,
+				"returnAssign": true,
+				"nestedBinaryExpressions": false, // conflicts with no-mixed-operators
+				"ignoreJSX": "multi-line",
+				"enforceForArrowConditionals": true,
+				"enforceForSequenceExpressions": true,
+				"enforceForNewInMemberExpressions": true,
+				"enforceForFunctionPrototypeMethods": false
+			}
+		],
+		"array-bracket-spacing": [
+			"warn",
+			"always",
+			{
+				"singleValue": true,
+				"objectsInArrays": false,
+				"arraysInArrays": false
+			}
+		],
 		"spaced-comment": [
 			"warn",
 			"always",
@@ -50,6 +73,10 @@
 				"destructuring": "all",
 				"ignoreReadBeforeAssign": true
 			}
-		]
+		],
+
+		// keep these:
+		"prefer-rest-params": "off",
+		"prefer-spread": "off"
 	}
 }
