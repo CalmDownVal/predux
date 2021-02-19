@@ -18,7 +18,8 @@ export default [
 		external: [
 			'@calmdownval/signal',
 			'@calmdownval/predux',
-			'preact'
+			'preact',
+			'preact/hooks'
 		],
 		plugins: [
 			typescript(),
