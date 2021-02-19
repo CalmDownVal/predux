@@ -21,6 +21,7 @@
 	// TODO: update these in @calmdownval/eslint-config
 	"rules": {
 		"@typescript-eslint/method-signature-style": "off", // annoying and the meanings are not the same anyway
+		"@typescript-eslint/consistent-type-assertions": "off", // :T is preferable, but `as` is sometimes necessary and this rule isn't able to detect that and allow those cases
 		"multiline-comment-style": "off", // very, very annoying
 		"func-style": "off", // nested functions should not be declarations and make sense to use due to `arguments`
 		"spaced-comment": [

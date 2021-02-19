@@ -3,13 +3,13 @@
 	"version": "0.3.0",
 	"license": "ISC",
 	"type": "commonjs",
-	"main": "./dist/cjs/index.js",
-	"module": "./dist/mjs/index.mjs",
-	"types": "./dist/cjs/index.d.ts",
+	"main": "./build/index.cjs.min.js",
+	"module": "./build/index.esm.min.js",
+	"types": "./build/index.d.ts",
 	"exports": {
 		".": {
-			"require": "./dist/cjs/index.js",
-			"default": "./dist/mjs/index.mjs"
+			"require": "./build/index.cjs.min.js",
+			"default": "./build/index.esm.min.js"
 		}
 	},
 	"repository": {
@@ -20,7 +20,10 @@
 		"build": "rollup -c",
 		"prepublishOnly": "rollup -c"
 	},
-	"dependencies": {
+	"peerDependencies": {
 		"@calmdownval/signal": ">=1.0.3"
+	},
+	"devDependencies": {
+		"@calmdownval/signal": "1.0.3"
 	}
 }
