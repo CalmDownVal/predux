@@ -65,10 +65,10 @@ export function createStore(
 			// get the sub-state and build the reducer args
 			const oldSubState = state[target.slice.uid];
 			const args = action.slice() as [ unknown, ...unknown[] ];
-			args[0] = state;
+			args[0] = oldSubState;
 
 			// invoke the reducer and detect state changes
-			const newSubState = target.reducer(null, args);
+			const newSubState = target.reducer.apply(null, args);
 			if (newSubState !== oldSubState) {
 				didStateChange = true;
 				state = {
