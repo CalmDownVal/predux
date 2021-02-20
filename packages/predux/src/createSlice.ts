@@ -2,11 +2,11 @@ import { SelectorKind, StateSelectorInstance } from './selectors';
 import type { ActionCreator, Reducer } from './types';
 import { getUid } from './uid';
 
-export interface SliceInit<TState = any> {
-	readonly actions: { readonly [name: string]: Reducer<TState> };
+export interface SliceInit<TState> {
+	readonly actions?: { readonly [name: string]: Reducer<TState> };
 	readonly displayName?: string;
 	readonly initialState: TState;
-	readonly selectors: { readonly [name: string]: StateSelectorInstance };
+	readonly selectors?: { readonly [name: string]: (state: TState) => any };
 }
 
 export function createSlice<TState>() {
@@ -18,7 +18,7 @@ export function createSlice<TState>() {
 		};
 
 		type MappedSelectors = {
-			readonly [K in keyof TInit['selectors']]: TInit['selectors'][K] extends StateSelectorInstance<infer TResult>
+			readonly [K in keyof TInit['selectors']]: TInit['selectors'][K] extends (state: TState) => infer TResult
 				? StateSelectorInstance<TResult>
 				: never
 		};
