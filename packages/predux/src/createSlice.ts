@@ -65,7 +65,7 @@ export function createSlice<TState>() {
 		}
 
 		for (const key in init.selectors) {
-			if (!Object.prototype.hasOwnProperty.call(init.actions, key)) {
+			if (!Object.prototype.hasOwnProperty.call(init.selectors, key)) {
 				continue;
 			}
 
