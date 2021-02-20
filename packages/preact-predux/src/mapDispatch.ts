@@ -39,10 +39,11 @@ interface ProxyMap {
 
 function createProxy(store: Store) {
 	const proxy: Proxy = {
-		invoke() {
-			return store.dispatch(this.action!.apply(null, arguments as any));
+		invoke(this: null) {
+			return store.dispatch(proxy.action!.apply(null, arguments as any));
 		}
 	};
+
 	return proxy;
 }
 
