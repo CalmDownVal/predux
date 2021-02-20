@@ -5,8 +5,8 @@
 	],
 	"devDependencies": {
 		"@calmdownval/eslint-config": "CalmDownVal/eslint-config",
-		"@rollup/plugin-typescript": "8.2.x",
 		"@rollup/plugin-node-resolve": "11.2.x",
+		"@rollup/plugin-typescript": "8.2.x",
 		"@typescript-eslint/eslint-plugin": "4.12.x",
 		"@typescript-eslint/parser": "4.12.x",
 		"eslint": "7.17.x",
