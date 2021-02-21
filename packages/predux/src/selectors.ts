@@ -70,8 +70,12 @@ export function invokeSelector<TResult, TProps>(selector: Selector<TResult, TPro
 // │  │ ││││├─┘│ │└─┐│ │ ││ ││││  │  │ ││ ┬││
 // └─┘└─┘┴ ┴┴  └─┘└─┘┴ ┴ ┴└─┘┘└┘  ┴─┘└─┘└─┘┴└─┘
 
-type UnboxProps<T> = T extends readonly Selector<any, infer P>[] ? P : never;
 type UnboxResult<T> = { [K in keyof T]: T[K] extends Selector<infer R> ? R : never };
+type UnboxProps<T> = T extends readonly StateSelectorInstance[]
+	? void
+	: T extends readonly Selector<any, infer P>[]
+		? P
+		: never;
 
 type CompositeSelector<TResult = any, TProps = any> =
 	| CompositeSelectorInstance<TResult, TProps>
