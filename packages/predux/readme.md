@@ -6,10 +6,10 @@ enforce one consistent way of doing things.
 ## Slice Actions and Reducers
 
 A slice is a part of the store logically separated by its responsibility. For
-example a store of a blog might have slices: articles, comments, users. Slices
-can be dependent on one another (e.g. articles and comments reference to a user
-who authored them), but must not affect data in foreign slices (e.g. an action
-of the comments slice must not modify users).
+example a store of a blog might have slices for articles, comments, users.
+Slices can be dependent on one another (e.g. articles and comments have
+references pointing to a user who authored them), but must not affect data in
+foreign slices (e.g. an action of the comments slice must not modify users).
 
 With Predux you provide the reducers for a slice's action; Its creator is then
 derived from the reducer's signature automatically.
@@ -18,50 +18,33 @@ derived from the reducer's signature automatically.
 
 ```ts
 import { createSlice } from '@calmdownval/predux';
-import { UsersState } from './types';
+import type { UsersState } from './types';
 
-export const slice = createSlice<UsersState>('users', {
-  currentUserId: null
+export const UserSlice = createSlice<UsersState>()({
+  displayName: 'users',
+  initialState: {
+    currentUserId: null
+  },
+  actions: {
+    currentUserChanged: (state, currentUserId: number) => ({
+      ...state,
+      currentUserId
+    })
+  },
+  selectors: {
+    getCurrentUserId: state => state.currentUserId
+  }
 });
-
-export const setCurrentUser = slice.createAction(
-  'set-current-user',
-  (state: UsersState, currentUserId: number) => ({
-    ...state,
-    currentUserId
-  })
-);
 ```
-
-The first arguments of `createSlice` and `createAction` are the display names.
-They are only intended for debugging purposes and can be skipped. These names
-are *not* used to identify slices or actions.
 
 The first argument of a reducer is always the state object. You can then
 add any number of custom arguments with data you need for the state change.
 
-Predux actions are arrays. The first item is the action identifier string and is
-followed by arguments of the reducer in order.
-
-## Accessing State
-
 Predux intentionally hides the state and does not allow direct access. To access
-data within the store you must first create selectors.
+data within the store you must first define selectors. You can then pass
+selectors to the `select` function of the store to obtain the relevant data.
 
-**src/store/user/selectors.ts**:
-
-```ts
-import { slice } from './slice';
-
-export const getCurrentUserId = slice.createSelector(
-  users => users.currentUserId
-);
-```
-
-You can then pass selectors to the `select` function of the store to obtain the
-current data.
-
-## Combining Slices and Creating the Store
+## Creating the Store
 
 To create a store you only need to list all your slices to the `createStore`
 function.
@@ -70,14 +53,14 @@ function.
 
 ```ts
 import { createStore } from '@calmdownval/predux';
-import { slice as counter } from './counter';
-import { slice as global } from './global';
-import { slice as user } from './user';
+import { CounterSlice } from './counter';
+import { GlobalSlice } from './global';
+import { UserSlice } from './user';
 
 export const store = createStore([
-  counter,
-  global,
-  user
+  CounterSlice,
+  GlobalSlice,
+  UserSlice
 ]);
 ```
 
@@ -98,92 +81,88 @@ invoked and passed three arguments:
 **src/store/thunks/refreshCounters.ts**:
 
 ```ts
-import type { Dispatch, Select } from '@calmdownval/predux';
+import { thunk } from '@calmdownval/predux';
 
-import { setCounter } from '~/store/counter';
-import { CounterType } from '~/store/counter/types';
-import { setApiError } from '~/store/global';
-import { getCurrentUserId } from '~/store/user/selectors';
+import { CounterType, CounterSlice } from '~/store/counter';
+import { GlobalSlice } from '~/store/global';
+import { UserSlice } from '~/store/user';
 
-export const refreshCounters = (url: string) =>
-  async (dispatch: Dispatch, select: Select) => {
-    try {
-      // read the state
-      const id = select(getCurrentUserId);
+export const refreshCounters = (url: string) => thunk(async (dispatch, select) => {
+  try {
+    // read the state
+    const id = select(UserSlice.selectors.getCurrentUserId);
 
-      // run an async operations
-      const response = await fetch(`/api/user/${id}/metadata`);
-      if (!response.ok) {
-        throw new Error(`unexpected HTTP status ${response.status}`);
-      }
-
-      // dispatch actions
-      const data = await response.json();
-      dispatch(setCounter(CounterType.FOLLOWERS, data.followerCount));
-      dispatch(setCounter(CounterType.LIKES, data.likeCount));
+    // run an async operations
+    const response = await fetch(`/api/user/${id}/metadata`);
+    if (!response.ok) {
+      throw new Error(`unexpected HTTP status ${response.status}`);
     }
-    catch (error) {
-      dispatch(setApiError(error));
-    }
-  };
+
+    // dispatch actions
+    const data = await response.json();
+    dispatch(CounterSlice.actions.counterChanged(CounterType.FOLLOWERS, data.followerCount));
+    dispatch(CounterSlice.actions.counterChanged(CounterType.LIKES, data.likeCount));
+  }
+  catch (error) {
+    dispatch(GlobalSlice.actions.apiErrorOccurred(error));
+  }
+});
 ```
 
 ## State Change Notifications
 
-The store provides the `dispatchCompleted` and `stateChanged` signals to which
+The store provides the `stateChanged` and `stateChangedBatch` signals to which
 you can subscribe using the `@calmdownval/signal` package.
 
 ```ts
 import * as Signal from '@calmdownval/signal';
 import { store } from '~/store';
 
-const onDispatchCompleted = () => {
-  // ...
-};
-
 const onStateChanged = () => {
   // ...
 };
 
+const onStateChangedBatch = () => {
+  // ...
+};
+
 // subscribe
-Signal.on(store.dispatchCompleted, onDispatchCompleted);
 Signal.on(store.stateChanged, onStateChanged);
+Signal.on(store.stateChangedBatch, onStateChangedBatch);
 
 // unsubscribe
-Signal.off(store.dispatchCompleted, onDispatchCompleted);
 Signal.off(store.stateChanged, onStateChanged);
+Signal.off(store.stateChangedBatch, onStateChangedBatch);
 ```
 
-The `dispatchCompleted` signal is notified every time a dispatch completes
-regardless of whether the state changed or not.
+The `stateChanged` signal is notified every time a dispatch is completed and the
+state has changed.
 
-Notifications to `stateChanged` are only sent when state actually changes and
-are batched using `requestAnimationFrame` when available or `setTimeout` with
-zero delay otherwise. If you wish to avoid the batching mechanism for a
-particular action, the `dispatch` method provides a second (optional) argument
-`forceImmediate` which when set to `true` will cause listeners to be notified
-immediately.
+Notifications to `onStateChangedBatch` are batched using `requestAnimationFrame`
+by default or a custom function provided to `createStore`. If you wish to bypass
+the batching mechanism for a particular dispatch, the `dispatch` method accepts
+a second (optional) argument `forceImmediate` which when set to `true` will
+cause even listeners of the batched signal to be notified immediately.
 
 State changes are always performed immediately upon dispatching an action. It is
 only the change notification that is postponed due to batching.
 
 ## State Awaiter Utility
 
-The awaiter utility constructs a promise using a simple boolean predicate which
-resolves once the predicate returns `true`. This is very useful when waiting for
-e.g. a modal window to receive user input.
+The awaiter utility constructs a promise using a selector and resolves once the
+selector returns the expected value. This is very useful when waiting for e.g. a
+modal window to receive user input.
 
 **src/store/thunks/showMessage.ts**:
 
 ```ts
-import { Thunk, until } from '@calmdownval/predux';
-import { showDialog } from '.';
+import { thunk, when } from '@calmdownval/predux';
+import { DialogSlice } from '~/store/dialog';
 
-export const showMessage = (message: string): Thunk<Promise<void>> =>
-  (dispatch, _select, store) => {
-    dispatch(showDialog(message));
-    return until(store, state => !state.dialog.isOpen);
-  };
+export const showMessage = (message: string) => thunk(async (dispatch, _select, store) => {
+  dispatch(DialogSlice.actions.dialogOpen(message));
+  await when(store, DialogSlice.selectors.isDialogOpen, { value: false });
+});
 ```
 
 After awaiting the `showMessage` thunk, the dialog is guaranteed to be already
