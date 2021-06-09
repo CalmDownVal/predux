@@ -1,6 +1,6 @@
 {
 	"name": "@calmdownval/preact-predux",
-	"version": "0.3.0-beta.3",
+	"version": "0.4.0",
 	"license": "ISC",
 	"main": "./build/index.cjs.min.js",
 	"module": "./build/index.esm.min.js",
@@ -20,12 +20,9 @@
 		"prepublishOnly": "rollup -c"
 	},
 	"peerDependencies": {
-		"@calmdownval/predux": "0.3.0-beta.3",
-		"@calmdownval/signal": ">=1.0.3",
 		"preact": ">=10.0.0"
 	},
 	"devDependencies": {
-		"@calmdownval/signal": "1.0.3",
-		"preact": "10.5.x"
+		"preact": "10.5.13"
 	}
 }

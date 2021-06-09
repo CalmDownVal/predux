@@ -1,0 +1,18 @@
+[x] consider converting store instances to a singleton
+[x] try to get rid of the need to wrap things in `dispatch` and `select`
+[x] merge thunks and actions
+	[x] come up with a way to register both reducer actions and composite actions (thunks) under action UUIDs
+	[x] explore possibilities to use @decorators
+		[x] `createSlice` only takes the type and initial state (and optionally a display name for debugging)
+		[x] `@reducer` takes the slice object and enhances a reducer function to fit the `Dispatchable` interface
+		[x] `@selector` takes the slice object and enhances a selector function to select from the correct sub-state
+		[ ] `@thunk` enhances a composite action to dispatch to the correct store
+	[x] refine the API to reduce boilerplate as much as possible
+[ ] make the connect function smarter
+	[ ] don't force update by default, first recalculate props and only then update the component if things changed
+	[ ] explore refactoring the connect HOC to a class component to get rid of hooks and hold state with less footprint
+	[ ] explore smarter ways of forwarding update notifications to avoid updating children twice (1. because of a parent update, 2. because of a forwarded notification)
+	[ ] try to convert connect to a @decorator
+[ ] implement support for middleware/enhancer plug-ins
+[ ] implement a websocket server to distribute action dispatches between sessions
+[ ] implement websocket-enabled middleware to sync stores using the sharing service

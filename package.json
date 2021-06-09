@@ -5,17 +5,17 @@
 	],
 	"devDependencies": {
 		"@calmdownval/eslint-config": "CalmDownVal/eslint-config",
-		"@rollup/plugin-node-resolve": "11.2.x",
-		"@rollup/plugin-typescript": "8.2.x",
-		"@typescript-eslint/eslint-plugin": "4.12.x",
-		"@typescript-eslint/parser": "4.12.x",
-		"eslint": "7.17.x",
-		"eslint-import-resolver-typescript": "2.3.x",
-		"eslint-plugin-import": "2.22.x",
-		"rollup": "2.39.x",
-		"rollup-plugin-dts": "2.0.x",
-		"rollup-plugin-terser": "7.0.x",
-		"typescript": "4.1.x",
-		"tslib": "2.1.x"
+		"@calmdownval/eslint-import-resolver-typescript": "1.0.0",
+		"@rollup/plugin-typescript": "8.2.1",
+		"@typescript-eslint/eslint-plugin": "4.23.0",
+		"@typescript-eslint/parser": "4.23.0",
+		"eslint": "7.26.0",
+		"eslint-plugin-import": "2.22.0",
+		"rollup": "2.50.3",
+		"rollup-plugin-delete": "2.0.0",
+		"rollup-plugin-dts": "3.0.2",
+		"rollup-plugin-terser": "7.0.2",
+		"tslib": "2.2.0",
+		"typescript": "4.3.2"
 	}
 }

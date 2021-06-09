@@ -4,22 +4,21 @@
 		"@calmdownval/eslint-config",
 		"@calmdownval/eslint-config/typescript"
 	],
-	"env": {
-		"browser": true
+	"globals": {
+		"globalThis": true
 	},
 	"parserOptions": {
 		"project": "./packages/*/tsconfig.json"
 	},
 	"settings": {
 		"import/resolver": {
-			"typescript": {
+			"@calmdownval/eslint-import-resolver-typescript": {
 				"project": "./packages/*/tsconfig.json"
 			}
 		}
 	},
 	"rules": {
-		"prefer-rest-params": "off",
-		"prefer-spread": "off"
+		"prefer-rest-params": "off"
 	},
 	"ignorePatterns": "rollup.config.js"
 }

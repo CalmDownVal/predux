@@ -1,7 +1,4 @@
-export * from './createSlice';
-export * from './createStore';
-export * from './mutability';
-export * from './selectors';
-export * from './thunk';
-export * from './types';
-export * from './when';
+// make sure context is obtained before any other code runs
+import './utils/globalContext';
+
+export * from './Store';

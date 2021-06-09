@@ -1,6 +1,6 @@
 {
 	"name": "@calmdownval/predux",
-	"version": "0.3.0-beta.3",
+	"version": "0.4.0",
 	"license": "ISC",
 	"main": "./build/index.cjs.min.js",
 	"module": "./build/index.esm.min.js",
@@ -18,11 +18,5 @@
 	"scripts": {
 		"build": "rollup -c",
 		"prepublishOnly": "rollup -c"
-	},
-	"peerDependencies": {
-		"@calmdownval/signal": ">=1.0.3"
-	},
-	"devDependencies": {
-		"@calmdownval/signal": "1.0.3"
 	}
 }

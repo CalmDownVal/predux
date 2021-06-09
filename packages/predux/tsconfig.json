@@ -1,17 +1,18 @@
 {
 	"compilerOptions": {
 		"charset": "utf8",
-		"forceConsistentCasingInFileNames": true,
+		"experimentalDecorators": true,
 		"lib": [
-			"dom",
 			"esnext"
 		],
 		"moduleResolution": "node",
 		"newLine": "lf",
+		"skipLibCheck": true,
 		"strict": true,
-		"types": []
+		"types": [],
+		"target": "esnext"
 	},
 	"include": [
-		"./src"
+		"./src/**/*"
 	]
 }
