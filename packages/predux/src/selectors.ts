@@ -57,7 +57,9 @@ export function isSelectorUsingProps<TResult, TProps>(obj: Selector<TResult, TPr
 	return obj.kind === SelectorKind.Props || (obj.kind === SelectorKind.Composite && obj.needsProps);
 }
 
-export function invokeSelector<TResult, TProps>(selector: Selector<TResult, TProps>, state: any, props: TProps) {
+export function invokeSelector<TResult>(selector: Selector<TResult, void>, state: any): TResult;
+export function invokeSelector<TResult, TProps>(selector: Selector<TResult, TProps>, state: any, props: TProps): TResult;
+export function invokeSelector(selector: Selector, state: any, props?: any) {
 	const instance = isSelectorFactory(selector) ? selector() : selector;
 	return isComposite(instance)
 		? selector(state, props)

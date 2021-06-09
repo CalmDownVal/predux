@@ -70,7 +70,11 @@ export function connect<TStateMap extends StateMap = {}, TDispatchMap extends Di
 			instance.prevStore = store;
 
 			// update mapped props accordingly
-			const nextProps = { ...ownProps };
+			const nextProps = {
+				store,
+				...ownProps
+			};
+
 			instance.updateStateMapping(nextProps, store, ownProps, stateChanged, propsChanged, storeChanged);
 			instance.updateDispatchMapping(nextProps, store, ownProps, stateChanged, propsChanged, storeChanged);
 
