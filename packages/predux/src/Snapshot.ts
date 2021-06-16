@@ -1,5 +1,5 @@
-import { globalContext } from './utils/globalContext';
-import { isGenerator, isPromise } from './utils/misc';
+import { globalContext } from './globalContext';
+import { isGenerator, isPromise } from './utils';
 
 export class Snapshot {
 	private readonly serial: number;
@@ -12,7 +12,7 @@ export class Snapshot {
 	 * Destroys a saved snapshot freeing up any memory associated with it.
 	 */
 	public destroy() {
-		// TODO: forEachStore(store => store._destroySnapshot(this.serial, false));
+		globalContext.forEachStore(store => store._destroySnapshot(this.serial));
 	}
 
 	/**
@@ -20,7 +20,7 @@ export class Snapshot {
 	 * snapshots are also destroyed.
 	 */
 	public restore() {
-		// TODO: forEachStore(store => store._restoreSnapshot(this.serial));
+		globalContext.forEachStore(store => store._restoreSnapshot(this.serial));
 	}
 }
 
@@ -29,21 +29,37 @@ export class Snapshot {
  * Once finished a single notification is dispatched. Useful to prevent
  * unnecessary updates when dispatching a series of actions.
  *
- * Generators can be used to batch actions between one or more asynchronous
- * calls.
+ * Generators can be used to batch actions between asynchronous calls.
  */
 export function batch(callback: () => void): void;
-export function batch(callback: () => Generator<void>): Promise<void>;
-export function batch(callback: () => void | Generator<void>) {
-	const depth = globalContext.batchDepth++;
+export function batch(callback: () => Generator<Promise<void>>): Promise<void>;
+export function batch(callback: () => Generator<Promise<void>> | void) {
 	try {
+		globalContext.pauseNotifications();
 		const result = callback();
-		if (isGenerator(result)) {
-			// TODO: allow async batches using generators
+		if (!isGenerator(result)) {
+			return undefined;
 		}
+
+		return new Promise<void>((resolve, reject) => {
+			const consumeNext = () => {
+				globalContext.pauseNotifications();
+				const yieldResult = result.next();
+				globalContext.resumeNotifications();
+
+				if (yieldResult.done) {
+					resolve();
+				}
+				else {
+					yieldResult.value.then(consumeNext, reject);
+				}
+			};
+
+			consumeNext();
+		});
 	}
 	finally {
-		globalContext.batchDepth = depth;
+		globalContext.resumeNotifications();
 	}
 }
 
@@ -55,10 +71,10 @@ export function batch(callback: () => void | Generator<void>) {
  * Transaction can be used with asynchronous callbacks, however notifications
  * will not be batched.
  */
-export function transaction(callback: () => Promise<boolean | void>): Promise<boolean>;
 export function transaction(callback: () => boolean | void): boolean;
-export function transaction(callback: () => Promise<boolean | void> | boolean | void) {
-	const depth = globalContext.batchDepth++;
+export function transaction(callback: () => Generator<Promise<boolean | void>> | Promise<boolean | void>): Promise<boolean>;
+export function transaction(callback: () => Generator<Promise<boolean | void>> | Promise<boolean | void> | boolean | void) {
+	globalContext.pauseNotifications();
 	const snapshot = new Snapshot();
 
 	const onFulfilled = (result: boolean | void) => {
@@ -88,7 +104,7 @@ export function transaction(callback: () => Promise<boolean | void> | boolean | 
 		throw ex;
 	}
 	finally {
-		globalContext.batchDepth = depth;
+		globalContext.resumeNotifications();
 	}
 }
 

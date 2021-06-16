@@ -6,7 +6,6 @@
 		[x] `createSlice` only takes the type and initial state (and optionally a display name for debugging)
 		[x] `@reducer` takes the slice object and enhances a reducer function to fit the `Dispatchable` interface
 		[x] `@selector` takes the slice object and enhances a selector function to select from the correct sub-state
-		[ ] `@thunk` enhances a composite action to dispatch to the correct store
 	[x] refine the API to reduce boilerplate as much as possible
 [ ] make the connect function smarter
 	[ ] don't force update by default, first recalculate props and only then update the component if things changed
@@ -16,3 +15,13 @@
 [ ] implement support for middleware/enhancer plug-ins
 [ ] implement a websocket server to distribute action dispatches between sessions
 [ ] implement websocket-enabled middleware to sync stores using the sharing service
+
+TS decorators cannot change the interface of their targets. This limits us a lot
+when trying to enhance reducers with remote sync. The best solution is probably
+to handle sync within reducers as fire-and-forget and instead provide a function
+like `pendingSync()` that can be awaited to pause execution until sync is done
+or to catch and handle potential errors.
+
+How do we identify applications? What if there are two apps running at the same
+time - their notifications will interfere and cause useless overhead. Same with
+sync - how do we know which actions to send where?

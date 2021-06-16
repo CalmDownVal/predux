@@ -18,6 +18,8 @@
 		}
 	},
 	"rules": {
+		"no-underscore-dangle": "off",
+		"prefer-destructuring": "off",
 		"prefer-rest-params": "off"
 	},
 	"ignorePatterns": "rollup.config.js"

@@ -1,5 +1,6 @@
 {
 	"compilerOptions": {
+		"baseUrl": "./src",
 		"charset": "utf8",
 		"experimentalDecorators": true,
 		"lib": [
@@ -7,10 +8,15 @@
 		],
 		"moduleResolution": "node",
 		"newLine": "lf",
+		"paths": {
+			"~/*": [
+				"*"
+			]
+		},
 		"skipLibCheck": true,
 		"strict": true,
 		"types": [],
-		"target": "esnext"
+		"target": "esnext",
 	},
 	"include": [
 		"./src/**/*"
