@@ -46,6 +46,11 @@
     resolve "1.20.x"
     tsconfig-paths "3.9.x"
 
+"@calmdownval/signal@2.0.1":
+  version "2.0.1"
+  resolved "https://registry.yarnpkg.com/@calmdownval/signal/-/signal-2.0.1.tgz#c2d8c10d62defd7c0ea9b2b20f28e3e148c5e9d9"
+  integrity sha512-aVFJ5yHYNAY7zurwpEzTexMbyRiR+cLM5S87bU+rLdNLyY+ziaMZ/RuN/AFwtqFuuTpBOtj7+ZUx2H3RZ32g9w==
+
 "@eslint/eslintrc@^0.4.2":
   version "0.4.2"
   resolved "https://registry.yarnpkg.com/@eslint/eslintrc/-/eslintrc-0.4.2.tgz#f63d0ef06f5c0c57d76c4ab5f63d3835c51b0179"

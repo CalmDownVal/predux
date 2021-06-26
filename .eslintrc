@@ -20,7 +20,18 @@
 	"rules": {
 		"no-underscore-dangle": "off",
 		"prefer-destructuring": "off",
-		"prefer-rest-params": "off"
+		"prefer-rest-params": "off",
+		"@typescript-eslint/no-use-before-define": [
+			"error",
+			{
+				"functions": false,
+				"classes": true,
+				"variables": false, // false = still checks stuff but avoids a few false-positives!
+				"enums": true,
+				"typedefs": false,
+				"ignoreTypeReferences": true
+			}
+		]
 	},
 	"ignorePatterns": "rollup.config.js"
 }

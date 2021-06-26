@@ -1,11 +1,9 @@
 import { globalContext } from './globalContext';
-import type { Store } from './Store';
+import type { Action, Store } from './Store';
 
 // In the below decorators we ask for the third argument, the property
 // descriptor, even though we don't actually use it. This makes TypeScript flag
-// any attempts to use these decorators or anything but class methods.
-
-export type Action = [ guid: string, ...args: any[] ];
+// any attempts to use these decorators on anything but class methods.
 
 /**
  * Decorator: Marks a method as a reducer capable of changing the state.
@@ -26,29 +24,26 @@ export function reducer<
 
 	proto[name] = function reducerWrapper(this: Store<TState>) {
 		try {
-			// TODO: When syncing, we should create a snapshot and send the
-			// TODO: action. If unsuccessful we should revert the state.
-			// TODO: This mechanism should also respect batching to save resources.
+			if (this.hasStaticGuid && this.actionDispatched.handlers.length > 0) {
+				const length = arguments.length;
+				const action = new Array(length + 1) as Action;
 
-			// if (isSyncingStores && this.hasStaticGuid) {
-			// 	const length = arguments.length;
-			// 	const action = new Array(length + 1) as Action;
+				action[0] = `${this.guid}/${name}`;
+				for (let i = 0; i < length; ++i) {
+					action[i + 1] = arguments[i];
+				}
 
-			// 	action[0] = `${this.guid}/${name}`;
-			// 	for (let i = 0; i < length; ++i) {
-			// 		action[i + 1] = arguments[i];
-			// 	}
+				this.actionDispatched(action);
+			}
 
-			//	...
-			// }
+			globalContext.isStateLocked = false;
+			const newState = fn.apply(this, arguments as any);
+			this.setState(newState);
 
-			globalContext.blockStoreReads = false;
-			const result = fn.apply(this, arguments as any);
-			this._setState(result);
-			return result;
+			return newState;
 		}
 		finally {
-			globalContext.blockStoreReads = true;
+			globalContext.isStateLocked = true;
 		}
 	} as typeof fn;
 }
@@ -71,11 +66,11 @@ export function selector<
 
 	proto[name] = function selectorWrapper(this: Store<TState>) {
 		try {
-			globalContext.blockStoreReads = false;
+			globalContext.isStateLocked = false;
 			return fn.apply(this, arguments as any);
 		}
 		finally {
-			globalContext.blockStoreReads = true;
+			globalContext.isStateLocked = true;
 		}
 	} as typeof fn;
 }

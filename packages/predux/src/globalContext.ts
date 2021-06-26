@@ -1,4 +1,5 @@
 import type { Store } from './Store';
+import type { Transaction } from './Transaction';
 
 // Each time a breaking change is introduced, the context version number must be
 // incremented for runtime compatibility checks to function correctly.
@@ -14,18 +15,31 @@ class PreduxContext {
 	public readonly version: number = CONTEXT_VER;
 
 	/**
-	 * Disallows reading the store. Used within reducer and selector wrappers.
+	 * Controls access to reading the store. Used within reducer and selector
+	 * wrappers.
+	 * @internal
 	 */
-	public blockStoreReads = true;
+	public isStateLocked = true;
 
 	/**
-	 * Keeps track of the snapshot timeline.
+	 * Tracks which store have changed during a batch.
 	 */
-	public snapshotSerial = 0;
+	private readonly affected = new Set<Store<any>>();
 
 	/**
-	 * Keeps track of nested batch blocks. State change notifications are paused
-	 * whenever this value is greater than zero.
+	 * Keeps track of all store instances.
+	 */
+	private readonly stores = new Map<string, Store<any>>();
+
+	/**
+	 * Keeps track of (potentially nested) transactions. State change
+	 * notifications are paused whenever this value is greater than zero.
+	 */
+	private readonly transactionStack: Transaction[] = [];
+
+	/**
+	 * Controls whether state change notifications are being sent immediately.
+	 * Used for batching.
 	 */
 	private batchDepth = 0;
 
@@ -36,60 +50,99 @@ class PreduxContext {
 	private guidIndex = 0;
 
 	/**
-	 * Tracks which states have changed during the current batch.
+	 * Generates a globally unique ID with an optional prefix.
 	 */
-	private changedStateGuids: Record<string, true | undefined> = {};
+	public getDynamicGuid(prefix = '') {
+		return `${prefix}${prefix || '.'}${++this.guidIndex}`;
+	}
 
 	/**
-	 * Keeps track of all store instances.
+	 * Returns a store instance registered under the provided guid. Returns
+	 * undefined when no such store exists.
 	 */
-	private readonly stores = new Map<string, Store<any>>();
-
-	public forEachStore(callback: (store: Store<any>) => void) {
-		this.stores.forEach(callback);
+	public getStore(guid: string) {
+		return this.stores.get(guid);
 	}
 
-	public getDynamicGuid(prefix = '') {
-		return `${prefix}.${++this.guidIndex}`;
-	}
-
-	public notify(store: Store<any>) {
-		// if (!this.stores.has(store.guid)) {
-		// 	throw new Error(`Cannot emit change notifications from a store that has not been registered (guid: '${store.guid}').`);
-		// }
-
-		this.changedStateGuids[store.guid] = true;
-		if (this.batchDepth === 0) {
-			this.emitNotification();
-		}
-	}
-
-	public pauseNotifications() {
-		return ++this.batchDepth;
-	}
-
-	public resumeNotifications() {
-		// if (this.batchDepth === 0) {
-		// 	throw new Error("Cannot resume notifications - they're not paused!");
-		// }
-
-		if (--this.batchDepth === 0) {
-			this.emitNotification();
-		}
-	}
-
+	/**
+	 * Registers a store.
+	 * @internal
+	 */
 	public registerStore(store: Store<any>) {
 		const prev = this.stores.get(store.guid);
-		if (prev && prev !== store) {
+		if (prev) {
+			if (prev === store) {
+				return;
+			}
+
 			throw new Error(`A different store with the guid '${store.guid}' was already registered.`);
 		}
 
 		this.stores.set(store.guid, store);
 	}
 
-	private emitNotification() {
-		// TODO: emit notification with the collected state guids
-		this.changedStateGuids = {};
+	/**
+	 * Begins a transaction. The provided instance will receive all state
+	 * changes until the `endTransaction` method is called.
+	 * @internal
+	 */
+	public beginTransaction(transaction: Transaction) {
+		this.transactionStack.push(transaction);
+	}
+
+	/**
+	 * Ends a transaction. After this call the instance will receive no further
+	 * state change notifications.
+	 * @internal
+	 */
+	public endTransaction(transaction: Transaction) {
+		if (this.transactionStack[this.transactionStack.length - 1] !== transaction) {
+			throw new Error('Cannot end transaction before its inner transactions are finished.');
+		}
+
+		this.transactionStack.pop();
+	}
+
+	/**
+	 * Pauses state change notification sent out to clients.
+	 * @internal
+	 */
+	public beginBatch() {
+		++this.batchDepth;
+	}
+
+	/**
+	 * Resumes state change notifications.
+	 * @internal
+	 */
+	public endBatch() {
+		this.batchDepth = Math.max(0, this.batchDepth - 1);
+		if (this.batchDepth === 0 && this.affected.size === 0) {
+			this.affected.forEach(store => store.stateChanged());
+			this.affected.clear();
+		}
+	}
+
+	/**
+	 * Performs necessary logic to notify all clients of a state change.
+	 * @internal
+	 */
+	public notify(store: Store<any>, previousState: any) {
+		// if (!this.stores.has(store.guid)) {
+		// 	throw new Error(`Cannot emit change notifications from a store that has not been registered (guid: '${store.guid}').`);
+		// }
+
+		const depth = this.transactionStack.length;
+		for (let i = 0; i < depth; ++i) {
+			this.transactionStack[i].addSnapshot(store.guid, previousState);
+		}
+
+		if (this.batchDepth === 0) {
+			store.stateChanged();
+		}
+		else {
+			this.affected.add(store);
+		}
 	}
 }
 

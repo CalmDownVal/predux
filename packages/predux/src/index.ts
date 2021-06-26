@@ -1,4 +1,4 @@
-// make sure context is obtained before any other code runs
-import './globalContext';
-
+export * from './batching';
+export * from './decorators';
+export * from './globalContext';
 export * from './Store';

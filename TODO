@@ -16,12 +16,24 @@
 [ ] implement a websocket server to distribute action dispatches between sessions
 [ ] implement websocket-enabled middleware to sync stores using the sharing service
 
-TS decorators cannot change the interface of their targets. This limits us a lot
-when trying to enhance reducers with remote sync. The best solution is probably
-to handle sync within reducers as fire-and-forget and instead provide a function
-like `pendingSync()` that can be awaited to pause execution until sync is done
-or to catch and handle potential errors.
+Q: TS decorators cannot change the interface of their targets. This limits us a
+lot when trying to enhance reducers with remote sync. What would be a good
+workaround?
 
-How do we identify applications? What if there are two apps running at the same
-time - their notifications will interfere and cause useless overhead. Same with
-sync - how do we know which actions to send where?
+A: The best solution is probably to handle sync within reducers as
+fire-and-forget and instead provide a function like `pendingSync()` that can be
+awaited to pause execution until sync is done or to catch and handle potential
+errors. If sync fails we can rollback the state using a simple transaction.
+
+Q: How do we identify applications? What if there are two apps running at the
+same time - their notifications will interfere and cause useless overhead. Same
+with sync - how do we know which actions to send where?
+
+A: The notification problem is already solved by placing the `stateChanged`
+events into individual stores rather than having a single global event for
+everything. There is no way for handlers from one app to bind to events from
+another so this is safe by default.
+
+Synchronization is a little trickier, but all we need to sync is reducer calls.
+For that simply providing a `SyncStore` class which requires a reference to a
+sync client would probably take care of it.
