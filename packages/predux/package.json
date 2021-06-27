@@ -15,12 +15,6 @@
 		"type": "git",
 		"url": "https://github.com/CalmDownVal/predux.git"
 	},
-	"peerDependencies": {
-		"@calmdownval/signal": ">=2.0.0"
-	},
-	"devDependencies": {
-		"@calmdownval/signal": "2.0.1"
-	},
 	"scripts": {
 		"build": "rollup -c",
 		"prepublishOnly": "yarn build"

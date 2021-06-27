@@ -15,14 +15,7 @@ class PreduxContext {
 	public readonly version: number = CONTEXT_VER;
 
 	/**
-	 * Controls access to reading the store. Used within reducer and selector
-	 * wrappers.
-	 * @internal
-	 */
-	public isStateLocked = true;
-
-	/**
-	 * Tracks which store have changed during a batch.
+	 * Tracks which stores have changed during a batch.
 	 */
 	private readonly affected = new Set<Store<any>>();
 
@@ -44,10 +37,15 @@ class PreduxContext {
 	private batchDepth = 0;
 
 	/**
-	 * Used for generating unique identifiers, incremented each time a new guid
-	 * is generated.
+	 * Holds a value incremented each time a new guid is generated. Used to
+	 * ensure unique identifiers.
 	 */
 	private guidIndex = 0;
+
+	/**
+	 * Maps guids of stores accessed during a tracking period.
+	 */
+	private trackingMap: Record<string, true | undefined> | null = null;
 
 	/**
 	 * Generates a globally unique ID with an optional prefix.
@@ -79,6 +77,23 @@ class PreduxContext {
 		}
 
 		this.stores.set(store.guid, store);
+	}
+
+	/**
+	 * Begins tracking any read accesses to the state.
+	 * @internal
+	 */
+	public beginTracking() {
+		this.trackingMap = {};
+	}
+
+	/**
+	 * Ends tracking and returns a map of which state has been accessed during
+	 * the tracking period.
+	 * @internal
+	 */
+	public endTracking() {
+		return this.trackingMap!;
 	}
 
 	/**
@@ -117,9 +132,20 @@ class PreduxContext {
 	 */
 	public endBatch() {
 		this.batchDepth = Math.max(0, this.batchDepth - 1);
-		if (this.batchDepth === 0 && this.affected.size === 0) {
-			this.affected.forEach(store => store.stateChanged());
+		if (this.batchDepth === 0 && this.affected.size > 0) {
+			this.affected.forEach(store => store.stateChanged.invoke());
 			this.affected.clear();
+		}
+	}
+
+	/**
+	 * Records a state access when tracking is active. Acts as no-op when
+	 * tracking is not active.
+	 * @internal
+	 */
+	public trackStateAccess(store: Store<any>) {
+		if (this.trackingMap) {
+			this.trackingMap[store.guid] = true;
 		}
 	}
 
@@ -127,7 +153,7 @@ class PreduxContext {
 	 * Performs necessary logic to notify all clients of a state change.
 	 * @internal
 	 */
-	public notify(store: Store<any>, previousState: any) {
+	public trackStateChange(store: Store<any>, previousState: any) {
 		// if (!this.stores.has(store.guid)) {
 		// 	throw new Error(`Cannot emit change notifications from a store that has not been registered (guid: '${store.guid}').`);
 		// }
@@ -138,7 +164,7 @@ class PreduxContext {
 		}
 
 		if (this.batchDepth === 0) {
-			store.stateChanged();
+			store.stateChanged.invoke();
 		}
 		else {
 			this.affected.add(store);

@@ -1,6 +1,5 @@
-import { createSync } from '@calmdownval/signal';
-
 import { globalContext } from './globalContext';
+import { Signal } from './Signal';
 
 export type Action = [ guid: string, ...args: any[] ];
 
@@ -8,8 +7,8 @@ export abstract class Store<T> {
 	public readonly guid: string;
 	public readonly hasStaticGuid: boolean;
 
-	public readonly actionDispatched = createSync<Action>();
-	public readonly stateChanged = createSync();
+	public readonly actionDispatched = new Signal<Action>();
+	public readonly stateChanged = new Signal();
 
 	private _state: T;
 
@@ -30,11 +29,8 @@ export abstract class Store<T> {
 		globalContext.registerStore(this);
 	}
 
-	protected get state(): T {
-		if (globalContext.isStateLocked) {
-			throw new Error('Cannot read the store outside of a selector. Make sure all methods reading the state are annotated with the @selector decorator.');
-		}
-
+	public get state() {
+		globalContext.trackStateAccess(this);
 		return this._state;
 	}
 
@@ -43,7 +39,7 @@ export abstract class Store<T> {
 		const oldState = this._state;
 		if (oldState !== newState) {
 			this._state = newState;
-			globalContext.notify(this, oldState);
+			globalContext.trackStateChange(this, oldState);
 		}
 	}
 }
