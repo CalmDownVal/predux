@@ -1,4 +1,5 @@
-import type { Action, Store } from './Store';
+import type { Store } from './Store';
+import type { Action } from './types';
 
 // In the below decorator we ask for the third argument, the property
 // descriptor, even though we don't actually use it. This makes TypeScript flag
@@ -21,11 +22,11 @@ export function reducer<
 		throw new Error('The `@reducer` decorator can only be used on class methods.');
 	}
 
-	proto[name] = function reducerWrapper(this: Store<TState>) {
+	proto[name] = function wrappedReducer(this: Store<TState>) {
 		const newState = fn.apply(this, arguments as any);
 		this.setState(newState);
 
-		if (this.hasStaticGuid && this.actionDispatched.hasSubscriptions) {
+		if (this.actionDispatched.hasSubscriptions) {
 			const length = arguments.length;
 			const action = new Array(length + 1) as Action;
 
@@ -39,4 +40,7 @@ export function reducer<
 
 		return newState;
 	} as typeof fn;
+
+	// register reducer to the current prototype
+	(Array.isArray(proto.reducers) ? proto.reducers : (proto.reducers = [])).push(name);
 }

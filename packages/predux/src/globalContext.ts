@@ -7,7 +7,7 @@ import type { Transaction } from './Transaction';
 const CONTEXT_KEY = '__preduxGlobalContext';
 const CONTEXT_VER = 1;
 
-class PreduxContext {
+class GlobalContext {
 	/**
 	 * Declares the version of the context. Used for compatibility checks when
 	 * multiple applications run alongside one another.
@@ -20,7 +20,12 @@ class PreduxContext {
 	private readonly affected = new Set<Store<any>>();
 
 	/**
-	 * Keeps track of all store instances.
+	 * Keeps track of all actions by their guids.
+	 */
+	private readonly actions = new Map<string, () => void>();
+
+	/**
+	 * Keeps track of all store instances by their guids.
 	 */
 	private readonly stores = new Map<string, Store<any>>();
 
@@ -80,8 +85,25 @@ class PreduxContext {
 	}
 
 	/**
+	 * Pauses state change notification sent out to clients.
+	 */
+	public beginBatch() {
+		++this.batchDepth;
+	}
+
+	/**
+	 * Resumes state change notifications.
+	 */
+	public endBatch() {
+		this.batchDepth = Math.max(0, this.batchDepth - 1);
+		if (this.batchDepth === 0 && this.affected.size > 0) {
+			this.affected.forEach(store => store.stateChanged.invoke());
+			this.affected.clear();
+		}
+	}
+
+	/**
 	 * Begins tracking any read accesses to the state.
-	 * @internal
 	 */
 	public beginTracking() {
 		this.trackingMap = {};
@@ -90,7 +112,6 @@ class PreduxContext {
 	/**
 	 * Ends tracking and returns a map of which state has been accessed during
 	 * the tracking period.
-	 * @internal
 	 */
 	public endTracking() {
 		return this.trackingMap!;
@@ -99,7 +120,6 @@ class PreduxContext {
 	/**
 	 * Begins a transaction. The provided instance will receive all state
 	 * changes until the `endTransaction` method is called.
-	 * @internal
 	 */
 	public beginTransaction(transaction: Transaction) {
 		this.transactionStack.push(transaction);
@@ -108,7 +128,6 @@ class PreduxContext {
 	/**
 	 * Ends a transaction. After this call the instance will receive no further
 	 * state change notifications.
-	 * @internal
 	 */
 	public endTransaction(transaction: Transaction) {
 		if (this.transactionStack[this.transactionStack.length - 1] !== transaction) {
@@ -116,26 +135,6 @@ class PreduxContext {
 		}
 
 		this.transactionStack.pop();
-	}
-
-	/**
-	 * Pauses state change notification sent out to clients.
-	 * @internal
-	 */
-	public beginBatch() {
-		++this.batchDepth;
-	}
-
-	/**
-	 * Resumes state change notifications.
-	 * @internal
-	 */
-	public endBatch() {
-		this.batchDepth = Math.max(0, this.batchDepth - 1);
-		if (this.batchDepth === 0 && this.affected.size > 0) {
-			this.affected.forEach(store => store.stateChanged.invoke());
-			this.affected.clear();
-		}
 	}
 
 	/**
@@ -154,10 +153,6 @@ class PreduxContext {
 	 * @internal
 	 */
 	public trackStateChange(store: Store<any>, previousState: any) {
-		// if (!this.stores.has(store.guid)) {
-		// 	throw new Error(`Cannot emit change notifications from a store that has not been registered (guid: '${store.guid}').`);
-		// }
-
 		const depth = this.transactionStack.length;
 		for (let i = 0; i < depth; ++i) {
 			this.transactionStack[i].addSnapshot(store.guid, previousState);
@@ -172,7 +167,7 @@ class PreduxContext {
 	}
 }
 
-declare const globalThis: { [CONTEXT_KEY]?: PreduxContext };
+declare const globalThis: { [CONTEXT_KEY]?: GlobalContext };
 
 export const globalContext = (() => {
 	if (typeof globalThis === 'undefined') {
@@ -188,5 +183,5 @@ export const globalContext = (() => {
 		return existingContext;
 	}
 
-	return (globalThis[CONTEXT_KEY] = new PreduxContext());
+	return (globalThis[CONTEXT_KEY] = new GlobalContext());
 })();

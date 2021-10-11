@@ -4,6 +4,9 @@
 		"@calmdownval/eslint-config",
 		"@calmdownval/eslint-config/typescript"
 	],
+	"env": {
+		"es6": true
+	},
 	"globals": {
 		"globalThis": true
 	},
@@ -21,6 +24,52 @@
 		"no-underscore-dangle": "off",
 		"prefer-destructuring": "off",
 		"prefer-rest-params": "off",
+		"func-names": "off", // annoying, function names are not always needed
+		"@typescript-eslint/naming-convention": [ // changed leading underscore settings
+			"warn",
+			// force camelCase for all values
+			{
+				"selector": [ "default" ],
+				"format": [ "camelCase" ],
+				"leadingUnderscore": "allow",
+				"trailingUnderscore": "forbid"
+			},
+
+			// force PascalCase for all types
+			{
+				"selector": [ "typeLike" ],
+				"format": [ "PascalCase" ],
+				"leadingUnderscore": "allow"
+			},
+
+			// override for global and static member constants
+			{
+				"selector": [ "variableLike" ],
+				"modifiers": [ "const", "global" ],
+				"format": [ "camelCase", "PascalCase", "UPPER_CASE" ],
+				"leadingUnderscore": "allow"
+			},
+			{
+				"selector": [ "memberLike" ],
+				"modifiers": [ "static" ],
+				"format": [ "camelCase", "PascalCase", "UPPER_CASE" ],
+				"leadingUnderscore": "allow"
+			},
+
+			// force PascalCase for enums
+			{
+				"selector": [ "enumMember" ],
+				"format": [ "PascalCase" ],
+				"leadingUnderscore": "allow"
+			},
+
+			// allow exotic naming when in quotes (useful for http headers etc.)
+			{
+				"selector": [ "objectLiteralProperty" ],
+				"modifiers": [ "requiresQuotes" ],
+				"format": null
+			}
+		],
 		"@typescript-eslint/no-use-before-define": [
 			"error",
 			{

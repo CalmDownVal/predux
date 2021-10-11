@@ -1,11 +1,13 @@
 import { globalContext } from './globalContext';
 import { Signal } from './Signal';
+import type { Action, GuidTarget } from './types';
 
-export type Action = [ guid: string, ...args: any[] ];
-
-export abstract class Store<T> {
+export abstract class Store<T> implements GuidTarget {
 	public readonly guid: string;
 	public readonly hasStaticGuid: boolean;
+
+	/** @internal */
+	public reducers!: string[];
 
 	public readonly actionDispatched = new Signal<Action>();
 	public readonly stateChanged = new Signal();
